@@ -28,7 +28,7 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
     name: "Qidiantu Booklist Intel API",
     routes: [
       "GET /health",
-      "GET /search/books?q=书名",
+      "GET /search/books?q=title",
       "GET /books/:bookId/plan",
       "POST /jobs/crawl-book",
       "GET /jobs/:jobId",
@@ -37,7 +37,10 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
     ],
   }));
 
-  app.get("/health", async () => ({ ok: true }));
+  app.get("/health", async () => ({
+    ok: true,
+    databaseConfigured: hasDatabaseConfig(),
+  }));
 
   app.get("/search/books", async (request, reply) => {
     const { q } = request.query as { q?: string };
@@ -62,7 +65,7 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
 
     return {
       ...meta,
-      estimatedSecondsAtConfiguredDelay: meta.totalPages * config.delayMs / 1000,
+      estimatedSecondsAtConfiguredDelay: (meta.totalPages * config.delayMs) / 1000,
     };
   });
 
