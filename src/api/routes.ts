@@ -24,7 +24,7 @@ const intersectionSchema = z.object({
 });
 
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
-  app.get("/", async () => ({
+  app.get("/api", async () => ({
     name: "Qidiantu Booklist Intel API",
     routes: [
       "GET /health",

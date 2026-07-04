@@ -50,6 +50,8 @@ npm run dev
 
 可用接口：
 
+- `GET /` Web GUI
+- `GET /api`
 - `GET /health`
 - `GET /books/:bookId/plan`
 - `POST /jobs/crawl-book`

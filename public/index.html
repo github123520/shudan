@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>书单情报台</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f3f5f8;
+        --panel: #ffffff;
+        --text: #14181f;
+        --muted: #5f6b7a;
+        --line: #d8dee8;
+        --accent: #1f6feb;
+        --accent-soft: #e8f0ff;
+        --good: #18794e;
+        --warn: #b26a00;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+          "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+
+      .shell {
+        width: min(1100px, calc(100vw - 24px));
+        margin: 0 auto;
+        padding: 16px 0 28px;
+      }
+
+      .hero {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 18px;
+        margin-bottom: 14px;
+      }
+
+      .hero h1 {
+        margin: 0 0 8px;
+        font-size: 24px;
+        line-height: 1.2;
+      }
+
+      .hero p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .grid {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 16px;
+      }
+
+      .panel h2 {
+        margin: 0 0 12px;
+        font-size: 18px;
+      }
+
+      .row {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: 1fr;
+      }
+
+      label {
+        display: block;
+        font-size: 13px;
+        margin-bottom: 6px;
+        color: var(--muted);
+      }
+
+      input,
+      textarea {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 10px 12px;
+        font: inherit;
+        background: #fff;
+        color: var(--text);
+      }
+
+      textarea {
+        min-height: 88px;
+        resize: vertical;
+      }
+
+      .actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+      }
+
+      button {
+        appearance: none;
+        border: 0;
+        border-radius: 8px;
+        padding: 10px 14px;
+        font: inherit;
+        font-weight: 600;
+        color: #fff;
+        background: var(--accent);
+      }
+
+      button.secondary {
+        background: #eef2f7;
+        color: var(--text);
+      }
+
+      .hint {
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .result {
+        margin-top: 12px;
+        background: #0f172a;
+        color: #dbe7ff;
+        border-radius: 8px;
+        padding: 12px;
+        overflow: auto;
+        font-size: 13px;
+        line-height: 1.5;
+        min-height: 100px;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      .statusbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 14px;
+      }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        padding: 8px 10px;
+        border-radius: 8px;
+        font-size: 13px;
+      }
+
+      .chip.good {
+        background: #e9f8ef;
+        color: var(--good);
+      }
+
+      .chip.warn {
+        background: #fff3df;
+        color: var(--warn);
+      }
+
+      @media (max-width: 860px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+
+        .hero h1 {
+          font-size: 22px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <h1>书单情报台</h1>
+        <p>给安卓手机也能顺手操作的版本。这里可以直接查抓取计划、下发抓取任务、看任务状态、读单书结果、做多书交集找书单。</p>
+      </section>
+
+      <div class="statusbar">
+        <div class="chip" id="api-base-chip">API: <span id="api-base"></span></div>
+        <div class="chip good" id="health-chip">服务状态未检测</div>
+        <div class="chip warn">建议首轮抓取先把页数限制在 1-2 页</div>
+      </div>
+
+      <section class="grid">
+        <article class="panel">
+          <h2>健康检查</h2>
+          <div class="actions">
+            <button id="health-btn">检查服务</button>
+          </div>
+          <div class="result" id="health-result">等待操作…</div>
+        </article>
+
+        <article class="panel">
+          <h2>抓取计划</h2>
+          <div class="row">
+            <div>
+              <label for="plan-book-id">书籍 ID</label>
+              <input id="plan-book-id" value="1015648531" />
+            </div>
+          </div>
+          <div class="actions">
+            <button id="plan-btn">查看计划</button>
+          </div>
+          <div class="result" id="plan-result">等待操作…</div>
+        </article>
+
+        <article class="panel">
+          <h2>创建抓取任务</h2>
+          <div class="row">
+            <div>
+              <label for="job-book-id">书籍 ID</label>
+              <input id="job-book-id" value="1015648531" />
+            </div>
+            <div>
+              <label for="job-max-pages">最大页数（可空）</label>
+              <input id="job-max-pages" placeholder="例如 2" />
+            </div>
+          </div>
+          <div class="actions">
+            <button id="job-create-btn">创建任务</button>
+          </div>
+          <div class="hint">第一次建议填 `2`，先验证链路通不通，再跑全量。</div>
+          <div class="result" id="job-create-result">等待操作…</div>
+        </article>
+
+        <article class="panel">
+          <h2>查询任务状态</h2>
+          <div class="row">
+            <div>
+              <label for="job-id">任务 ID</label>
+              <input id="job-id" placeholder="例如 1" />
+            </div>
+          </div>
+          <div class="actions">
+            <button id="job-status-btn">查看状态</button>
+          </div>
+          <div class="result" id="job-status-result">等待操作…</div>
+        </article>
+
+        <article class="panel">
+          <h2>查看单书结果</h2>
+          <div class="row">
+            <div>
+              <label for="book-details-id">书籍 ID</label>
+              <input id="book-details-id" value="1015648531" />
+            </div>
+            <div>
+              <label for="book-details-page">页码</label>
+              <input id="book-details-page" value="1" />
+            </div>
+          </div>
+          <div class="actions">
+            <button id="book-details-btn">查看结果</button>
+          </div>
+          <div class="result" id="book-details-result">等待操作…</div>
+        </article>
+
+        <article class="panel">
+          <h2>多书交集找书单</h2>
+          <div class="row">
+            <div>
+              <label for="intersection-book-ids">书籍 ID 列表（逗号分隔）</label>
+              <textarea id="intersection-book-ids">1015648531,1010868264</textarea>
+            </div>
+            <div>
+              <label for="intersection-limit">返回数量</label>
+              <input id="intersection-limit" value="20" />
+            </div>
+          </div>
+          <div class="actions">
+            <button id="intersection-btn">查交集书单</button>
+          </div>
+          <div class="result" id="intersection-result">等待操作…</div>
+        </article>
+      </section>
+    </main>
+
+    <script>
+      const apiBase = window.location.origin;
+      document.getElementById("api-base").textContent = apiBase;
+
+      function setResult(id, data) {
+        document.getElementById(id).textContent =
+          typeof data === "string" ? data : JSON.stringify(data, null, 2);
+      }
+
+      async function requestJson(url, options) {
+        const response = await fetch(url, options);
+        const text = await response.text();
+        let data;
+
+        try {
+          data = text ? JSON.parse(text) : {};
+        } catch {
+          data = { raw: text };
+        }
+
+        if (!response.ok) {
+          throw new Error(JSON.stringify(data, null, 2));
+        }
+
+        return data;
+      }
+
+      document.getElementById("health-btn").addEventListener("click", async () => {
+        setResult("health-result", "检测中…");
+        try {
+          const data = await requestJson("/health");
+          document.getElementById("health-chip").textContent = "服务正常";
+          document.getElementById("health-chip").className = "chip good";
+          setResult("health-result", data);
+        } catch (error) {
+          document.getElementById("health-chip").textContent = "服务异常";
+          document.getElementById("health-chip").className = "chip warn";
+          setResult("health-result", String(error));
+        }
+      });
+
+      document.getElementById("plan-btn").addEventListener("click", async () => {
+        const bookId = document.getElementById("plan-book-id").value.trim();
+        setResult("plan-result", "查询中…");
+        try {
+          const data = await requestJson(`/books/${bookId}/plan`);
+          setResult("plan-result", data);
+        } catch (error) {
+          setResult("plan-result", String(error));
+        }
+      });
+
+      document.getElementById("job-create-btn").addEventListener("click", async () => {
+        const bookId = document.getElementById("job-book-id").value.trim();
+        const maxPagesRaw = document.getElementById("job-max-pages").value.trim();
+        const payload = { bookId };
+
+        if (maxPagesRaw) {
+          payload.maxPages = Number(maxPagesRaw);
+        }
+
+        setResult("job-create-result", "提交中…");
+        try {
+          const data = await requestJson("/jobs/crawl-book", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          if (data.jobId) {
+            document.getElementById("job-id").value = String(data.jobId);
+          }
+          setResult("job-create-result", data);
+        } catch (error) {
+          setResult("job-create-result", String(error));
+        }
+      });
+
+      document.getElementById("job-status-btn").addEventListener("click", async () => {
+        const jobId = document.getElementById("job-id").value.trim();
+        setResult("job-status-result", "查询中…");
+        try {
+          const data = await requestJson(`/jobs/${jobId}`);
+          setResult("job-status-result", data);
+        } catch (error) {
+          setResult("job-status-result", String(error));
+        }
+      });
+
+      document.getElementById("book-details-btn").addEventListener("click", async () => {
+        const bookId = document.getElementById("book-details-id").value.trim();
+        const page = document.getElementById("book-details-page").value.trim() || "1";
+        setResult("book-details-result", "查询中…");
+        try {
+          const data = await requestJson(`/books/${bookId}?page=${encodeURIComponent(page)}`);
+          setResult("book-details-result", data);
+        } catch (error) {
+          setResult("book-details-result", String(error));
+        }
+      });
+
+      document.getElementById("intersection-btn").addEventListener("click", async () => {
+        const raw = document.getElementById("intersection-book-ids").value;
+        const limit = Number(document.getElementById("intersection-limit").value.trim() || "20");
+        const bookIds = raw
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean);
+
+        setResult("intersection-result", "查询中…");
+        try {
+          const data = await requestJson("/search/booklists/intersection", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ bookIds, limit }),
+          });
+          setResult("intersection-result", data);
+        } catch (error) {
+          setResult("intersection-result", String(error));
+        }
+      });
+
+      document.getElementById("health-btn").click();
+    </script>
+  </body>
+</html>

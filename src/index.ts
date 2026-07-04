@@ -1,3 +1,6 @@
+import path from "node:path";
+
+import fastifyStatic from "@fastify/static";
 import Fastify from "fastify";
 
 import { config } from "./config.js";
@@ -11,6 +14,12 @@ async function main(): Promise<void> {
 
   const app = Fastify({
     logger: true,
+  });
+
+  await app.register(fastifyStatic, {
+    root: path.resolve(process.cwd(), "public"),
+    prefix: "/",
+    index: ["index.html"],
   });
 
   await registerRoutes(app);
