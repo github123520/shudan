@@ -16,6 +16,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
 COPY --from=build /app/dist ./dist
+COPY --from=build /app/public ./public
 COPY --from=build /app/src/db/schema.sql ./src/db/schema.sql
 
 EXPOSE 3000
