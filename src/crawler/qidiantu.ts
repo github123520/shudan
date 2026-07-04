@@ -2,7 +2,7 @@ import * as cheerio from "cheerio";
 
 import { sha1 } from "../lib/hash.js";
 import { sleep } from "../lib/sleep.js";
-import type { BookCrawlResult, BookMeta, BooklistEntry, CrawlConfig } from "../types.js";
+import type { BookCrawlResult, BookMeta, BookSearchResult, BooklistEntry, CrawlConfig } from "../types.js";
 
 const PAGE_SIZE = 10;
 
@@ -37,12 +37,16 @@ async function fetchHtml(url: string, timeoutMs: number): Promise<string> {
   }
 }
 
+function normalizeText(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
+}
+
 function parseTitle($: cheerio.CheerioAPI): string {
   return $("h1.h1-table").first().text().trim();
 }
 
 function parseTotalBooklists($: cheerio.CheerioAPI): number {
-  const alertText = $(".alert.alert-info").first().text().replace(/\s+/g, " ").trim();
+  const alertText = normalizeText($(".alert.alert-info").first().text());
   const match = alertText.match(/共被(\d+)份书单收录过/);
 
   if (!match) {
@@ -94,14 +98,14 @@ function parsePanelEntry(panel: cheerio.Cheerio<any>, page: number, baseUrl: str
   const paragraphs = panelBody
     .find("p")
     .toArray()
-    .map((p) => cheerio.load(p).text().replace(/\s+/g, " ").trim())
+    .map((p) => normalizeText(cheerio.load(p).text()))
     .filter(Boolean);
 
-  const bodyText = panelBody.text().replace(/\s+/g, " ").trim();
+  const bodyText = normalizeText(panelBody.text());
   const includedAtMatch = bodyText.match(/收录于:([0-9-]+)/);
   const heartsMatch = bodyText.match(/❤️\s*(\d+)/);
 
-  const footerText = panelFooter.text().replace(/\s+/g, " ").trim();
+  const footerText = normalizeText(panelFooter.text());
   const countMatch = footerText.match(/\((\d+)本书，(\d+)人关注\)/);
 
   return {
@@ -150,6 +154,69 @@ export async function inspectBookPlan(bookId: string, config: CrawlConfig): Prom
   const sourceUrl = bookInfoUrl(config.baseUrl, bookId, 0);
   const html = await fetchHtml(sourceUrl, config.timeoutMs);
   return parseMeta(bookId, sourceUrl, html);
+}
+
+export async function searchBooksByTitle(query: string, config: CrawlConfig): Promise<BookSearchResult[]> {
+  const url = `${config.baseUrl}/bookxyy/${encodeURIComponent(query)}`;
+  const html = await fetchHtml(url, config.timeoutMs);
+  const $ = cheerio.load(html);
+  const results: BookSearchResult[] = [];
+  const seen = new Set<string>();
+
+  $("a[href^='/info/'] h4").each((_, heading) => {
+    const headingNode = $(heading);
+    const bookAnchor = headingNode.closest("a[href^='/info/']");
+    const bookHref = bookAnchor.attr("href");
+    if (!bookHref) {
+      return;
+    }
+
+    const match = bookHref.match(/\/info\/(\d+)/);
+    if (!match) {
+      return;
+    }
+
+    const bookId = match[1];
+    if (seen.has(bookId)) {
+      return;
+    }
+
+    const table = headingNode.closest("table");
+    const rows = table.find("tr").toArray().map((row) => normalizeText($(row).text()));
+    const authorRow = rows.find((row) => row.startsWith("作者：")) ?? "";
+    const tagRow = rows.find((row) => row.startsWith("标签:")) ?? "";
+    const countRow = rows.find((row) => row.includes("总收藏:")) ?? "";
+
+    const authorMatch = authorRow.match(/^作者：(.+?)(?:\((.*?)\))?$/);
+    const tagMatch = tagRow.match(/^标签:([^\s]+)\s+(.+?)\s+状态:(.+)$/);
+    const favoriteMatch = countRow.match(/总收藏:([^\s]+)/);
+    const recommendationMatch = countRow.match(/总推荐:([^\s]+)/);
+    const leaderMatch = countRow.match(/盟主数:([^\s]+)/);
+    const wordCountRow = rows.find((row) => row.startsWith("总字数:")) ?? "";
+    const wordCountMatch = wordCountRow.match(/总字数:([^\s]+)/);
+
+    const cover = $(`a[href='${bookHref}'] img`).first().attr("src") ?? null;
+
+    results.push({
+      bookId,
+      title: headingNode.text().trim(),
+      authorName: authorMatch?.[1]?.trim() ?? null,
+      authorLevel: authorMatch?.[2]?.trim() ?? null,
+      category: tagMatch?.[1]?.trim() ?? null,
+      subCategory: tagMatch?.[2]?.trim() ?? null,
+      status: tagMatch?.[3]?.trim() ?? null,
+      wordCountText: wordCountMatch?.[1]?.trim() ?? null,
+      favoriteCountText: favoriteMatch?.[1]?.trim() ?? null,
+      recommendationCountText: recommendationMatch?.[1]?.trim() ?? null,
+      leaderCountText: leaderMatch?.[1]?.trim() ?? null,
+      coverUrl: cover,
+      bookUrl: `${config.baseUrl}${bookHref}`,
+    });
+
+    seen.add(bookId);
+  });
+
+  return results;
 }
 
 export async function crawlBook(bookId: string, config: CrawlConfig, maxPages?: number): Promise<BookCrawlResult> {

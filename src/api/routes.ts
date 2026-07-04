@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 
 import { config } from "../config.js";
-import { inspectBookPlan } from "../crawler/qidiantu.js";
+import { inspectBookPlan, searchBooksByTitle } from "../crawler/qidiantu.js";
 import { getSql, hasDatabaseConfig } from "../db/client.js";
 import {
   createCrawlJob,
@@ -28,6 +28,7 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
     name: "Qidiantu Booklist Intel API",
     routes: [
       "GET /health",
+      "GET /search/books?q=书名",
       "GET /books/:bookId/plan",
       "POST /jobs/crawl-book",
       "GET /jobs/:jobId",
@@ -37,6 +38,23 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
   }));
 
   app.get("/health", async () => ({ ok: true }));
+
+  app.get("/search/books", async (request, reply) => {
+    const { q } = request.query as { q?: string };
+    const query = q?.trim();
+
+    if (!query || query.length < 2) {
+      return reply.code(400).send({ error: "Query must be at least 2 characters" });
+    }
+
+    const results = await searchBooksByTitle(query, config);
+
+    return {
+      query,
+      total: results.length,
+      results,
+    };
+  });
 
   app.get("/books/:bookId/plan", async (request) => {
     const { bookId } = request.params as { bookId: string };

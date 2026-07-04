@@ -74,6 +74,11 @@
         font-size: 18px;
       }
 
+      .panel h3 {
+        margin: 0 0 10px;
+        font-size: 15px;
+      }
+
       .row {
         display: grid;
         gap: 10px;
@@ -147,6 +152,50 @@
         word-break: break-word;
       }
 
+      .search-results {
+        display: grid;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .book-card {
+        display: grid;
+        grid-template-columns: 72px minmax(0, 1fr);
+        gap: 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 12px;
+        background: #fff;
+      }
+
+      .book-card img {
+        width: 72px;
+        height: 96px;
+        object-fit: cover;
+        border-radius: 6px;
+        background: #eef2f7;
+      }
+
+      .book-card-title {
+        font-size: 16px;
+        font-weight: 700;
+        line-height: 1.4;
+        margin-bottom: 6px;
+      }
+
+      .book-card-meta {
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .book-card-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+      }
+
       .statusbar {
         display: flex;
         flex-wrap: wrap;
@@ -201,6 +250,22 @@
 
       <section class="grid">
         <article class="panel">
+          <h2>先搜书名</h2>
+          <div class="row">
+            <div>
+              <label for="search-book-query">书名</label>
+              <input id="search-book-query" value="我真没想重生啊" />
+            </div>
+          </div>
+          <div class="actions">
+            <button id="search-book-btn">搜书</button>
+          </div>
+          <div class="hint">这里直接复用起点图的搜小说入口，不用你自己先找书 ID。</div>
+          <div class="result" id="search-book-result">等待操作…</div>
+          <div class="search-results" id="search-book-cards"></div>
+        </article>
+
+        <article class="panel">
           <h2>健康检查</h2>
           <div class="actions">
             <button id="health-btn">检查服务</button>
@@ -219,6 +284,7 @@
           <div class="actions">
             <button id="plan-btn">查看计划</button>
           </div>
+          <div class="hint">可以先用上面的“搜书”把 ID 自动填进来。</div>
           <div class="result" id="plan-result">等待操作…</div>
         </article>
 
@@ -237,7 +303,7 @@
           <div class="actions">
             <button id="job-create-btn">创建任务</button>
           </div>
-          <div class="hint">第一次建议填 `2`，先验证链路通不通，再跑全量。</div>
+          <div class="hint">第一次建议填 1 或 2，先验证链路通不通，再跑全量。</div>
           <div class="result" id="job-create-result">等待操作…</div>
         </article>
 
@@ -320,6 +386,78 @@
         return data;
       }
 
+      function applyBook(book) {
+        const id = String(book.bookId);
+        document.getElementById("plan-book-id").value = id;
+        document.getElementById("job-book-id").value = id;
+        document.getElementById("book-details-id").value = id;
+        setResult("search-book-result", {
+          selectedBookId: id,
+          title: book.title,
+          authorName: book.authorName,
+        });
+      }
+
+      function renderSearchCards(items) {
+        const root = document.getElementById("search-book-cards");
+        root.innerHTML = "";
+
+        if (!items.length) {
+          root.innerHTML = "<div class=\"hint\">没找到结果。</div>";
+          return;
+        }
+
+        for (const book of items) {
+          const card = document.createElement("article");
+          card.className = "book-card";
+
+          const cover = document.createElement("img");
+          cover.src = book.coverUrl || "";
+          cover.alt = book.title;
+          if (!book.coverUrl) {
+            cover.style.visibility = "hidden";
+          }
+
+          const body = document.createElement("div");
+          const metaLines = [
+            `ID：${book.bookId}`,
+            book.authorName ? `作者：${book.authorName}${book.authorLevel ? `（${book.authorLevel}）` : ""}` : "",
+            [book.category, book.subCategory, book.status].filter(Boolean).join(" / "),
+            [
+              book.wordCountText ? `字数 ${book.wordCountText}` : "",
+              book.favoriteCountText ? `收藏 ${book.favoriteCountText}` : "",
+              book.recommendationCountText ? `推荐 ${book.recommendationCountText}` : "",
+              book.leaderCountText ? `盟主 ${book.leaderCountText}` : "",
+            ].filter(Boolean).join(" | "),
+          ].filter(Boolean);
+
+          body.innerHTML = `
+            <div class="book-card-title">${book.title}</div>
+            <div class="book-card-meta">${metaLines.join("<br>")}</div>
+          `;
+
+          const actions = document.createElement("div");
+          actions.className = "book-card-actions";
+
+          const useButton = document.createElement("button");
+          useButton.textContent = "用这本";
+          useButton.addEventListener("click", () => applyBook(book));
+
+          const openButton = document.createElement("button");
+          openButton.textContent = "打开原页";
+          openButton.className = "secondary";
+          openButton.addEventListener("click", () => window.open(book.bookUrl, "_blank"));
+
+          actions.appendChild(useButton);
+          actions.appendChild(openButton);
+          body.appendChild(actions);
+
+          card.appendChild(cover);
+          card.appendChild(body);
+          root.appendChild(card);
+        }
+      }
+
       document.getElementById("health-btn").addEventListener("click", async () => {
         setResult("health-result", "检测中…");
         try {
@@ -331,6 +469,26 @@
           document.getElementById("health-chip").textContent = "服务异常";
           document.getElementById("health-chip").className = "chip warn";
           setResult("health-result", String(error));
+        }
+      });
+
+      document.getElementById("search-book-btn").addEventListener("click", async () => {
+        const query = document.getElementById("search-book-query").value.trim();
+        setResult("search-book-result", "搜索中…");
+        document.getElementById("search-book-cards").innerHTML = "";
+        try {
+          const data = await requestJson(`/search/books?q=${encodeURIComponent(query)}`);
+          setResult("search-book-result", {
+            query: data.query,
+            total: data.total,
+          });
+          renderSearchCards(data.results || []);
+          const exact = (data.results || []).find((item) => item.title === query);
+          if (exact) {
+            applyBook(exact);
+          }
+        } catch (error) {
+          setResult("search-book-result", String(error));
         }
       });
 

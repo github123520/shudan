@@ -16,13 +16,13 @@ async function main(): Promise<void> {
     logger: true,
   });
 
+  await registerRoutes(app);
+
   await app.register(fastifyStatic, {
     root: path.resolve(process.cwd(), "public"),
     prefix: "/",
     index: ["index.html"],
   });
-
-  await registerRoutes(app);
 
   await app.listen({
     host: "0.0.0.0",

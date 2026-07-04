@@ -53,6 +53,7 @@ npm run dev
 - `GET /` Web GUI
 - `GET /api`
 - `GET /health`
+- `GET /search/books?q=书名`
 - `GET /books/:bookId/plan`
 - `POST /jobs/crawl-book`
 - `GET /jobs/:jobId`

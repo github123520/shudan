@@ -18,6 +18,22 @@ export interface CrawlBookJobPayload {
   maxPages?: number;
 }
 
+export interface BookSearchResult {
+  bookId: string;
+  title: string;
+  authorName: string | null;
+  authorLevel: string | null;
+  category: string | null;
+  subCategory: string | null;
+  status: string | null;
+  wordCountText: string | null;
+  favoriteCountText: string | null;
+  recommendationCountText: string | null;
+  leaderCountText: string | null;
+  coverUrl: string | null;
+  bookUrl: string;
+}
+
 export interface BooklistEntry {
   page: number;
   commentText: string;
