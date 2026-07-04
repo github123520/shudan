@@ -1,0 +1,26 @@
+{
+  "name": "qidiantu-booklist-intel",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "crawl:book": "tsx src/cli/crawl-book.ts",
+    "db:migrate": "tsx src/cli/db-migrate.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "cheerio": "^1.1.2",
+    "dotenv": "^17.2.1",
+    "fastify": "^5.6.1",
+    "postgres": "^3.4.7",
+    "zod": "^4.1.5"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
+  }
+}
