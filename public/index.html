@@ -59,10 +59,11 @@
       .about-line { line-height: 1.7; }
       .about-pill {
         display: inline-block;
-        padding: 1px 6px;
+        min-height: 14px;
+        padding: 1px 5px;
         border-radius: 3px;
         font-size: 11px;
-        line-height: 1.2;
+        line-height: 12px;
         color: #fff;
         vertical-align: baseline;
       }
@@ -72,14 +73,18 @@
       .about-pill.dark { background: var(--dark); }
       .about-path {
         display: inline-block;
-        padding: 1px 6px;
+        min-height: 14px;
+        padding: 1px 5px;
         border-radius: 3px;
+        font-size: 11px;
+        line-height: 12px;
         background: var(--ink);
         color: #fff;
         word-break: break-all;
+        vertical-align: baseline;
       }
-      .about-gap-before { margin-left: 3px; }
-      .about-gap-after { margin-right: 3px; }
+      .about-gap-before { margin-left: 2px; }
+      .about-gap-after { margin-right: 2px; }
       .about-gap-tight-after { margin-right: 1px; }
       .layout-grid {
         display: grid;
@@ -354,7 +359,10 @@
           status.innerHTML = `服务正常，<span class="about-pill green about-gap-before about-gap-after">PostgreSQL</span>已接通，识别来源 <span class="about-path about-gap-before about-gap-after">${data.databaseConfigSource || "unknown"}</span>。`;
         } else {
           status.className = "status-line";
-          status.innerHTML = '服务正常，当前使用<span class="about-pill green about-gap-before about-gap-after">文件存储</span>，无需配置数据库。注意：如果 Zeabur 没挂持久化硬盘，重新部署后已抓取数据可能会清空。';
+          const reason = data.databaseUnavailableReason
+            ? `检测到数据库变量，但连接失败：<span class="about-path about-gap-before about-gap-after">${data.databaseUnavailableReason}</span>`
+            : "没有检测到可用数据库变量。";
+          status.innerHTML = `服务正常，当前使用<span class="about-pill green about-gap-before about-gap-after">文件存储</span>，无需配置数据库。${reason} 注意：如果 Zeabur 没挂持久化硬盘，重新部署后已抓取数据可能会清空。`;
         }
       }
 

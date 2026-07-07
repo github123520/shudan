@@ -1,4 +1,9 @@
-import { getDatabaseConfigSource, getSql, hasDatabaseConfig } from "../db/client.js";
+import {
+  getDatabaseConfigSource,
+  getDatabaseUnavailableReason,
+  getSql,
+  hasDatabaseConfig,
+} from "../db/client.js";
 import {
   createCrawlJob,
   findIntersectingBooklists,
@@ -24,6 +29,7 @@ export function getStorageStatus(): {
   driver: "postgres" | "file";
   databaseConfigured: boolean;
   databaseConfigSource: string | null;
+  databaseUnavailableReason: string | null;
 } {
   const databaseConfigured = hasDatabaseConfig();
 
@@ -31,6 +37,7 @@ export function getStorageStatus(): {
     driver: databaseConfigured ? "postgres" : "file",
     databaseConfigured,
     databaseConfigSource: getDatabaseConfigSource(),
+    databaseUnavailableReason: getDatabaseUnavailableReason(),
   };
 }
 

@@ -49,7 +49,7 @@ function resolveDatabaseUrl(): string {
 }
 
 export function hasDatabaseConfig(): boolean {
-  return Boolean(getDirectDatabaseUrl() ?? buildDatabaseUrlFromParts());
+  return hasDatabaseEnvironment() && !databaseUnavailableReason;
 }
 
 export function getDatabaseConfigSource(): string | null {
@@ -63,6 +63,11 @@ export function getDatabaseConfigSource(): string | null {
 }
 
 let sqlClient: postgres.Sql | null = null;
+let databaseUnavailableReason: string | null = null;
+
+function hasDatabaseEnvironment(): boolean {
+  return Boolean(getDirectDatabaseUrl() ?? buildDatabaseUrlFromParts());
+}
 
 export function getSql(): postgres.Sql {
   if (!sqlClient) {
@@ -75,6 +80,19 @@ export function getSql(): postgres.Sql {
   }
 
   return sqlClient;
+}
+
+export function markDatabaseUnavailable(reason: string): void {
+  databaseUnavailableReason = reason;
+
+  if (sqlClient) {
+    void sqlClient.end({ timeout: 1 }).catch(() => undefined);
+    sqlClient = null;
+  }
+}
+
+export function getDatabaseUnavailableReason(): string | null {
+  return databaseUnavailableReason;
 }
 
 export async function runMigrations(): Promise<void> {

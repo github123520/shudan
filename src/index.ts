@@ -5,11 +5,17 @@ import Fastify from "fastify";
 
 import { config } from "./config.js";
 import { registerRoutes } from "./api/routes.js";
-import { hasDatabaseConfig, runMigrations } from "./db/client.js";
+import { hasDatabaseConfig, markDatabaseUnavailable, runMigrations } from "./db/client.js";
 
 async function main(): Promise<void> {
   if (hasDatabaseConfig()) {
-    await runMigrations();
+    try {
+      await runMigrations();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      markDatabaseUnavailable(message);
+      console.warn(`PostgreSQL unavailable, falling back to file storage: ${message}`);
+    }
   }
 
   const app = Fastify({
