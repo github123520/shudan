@@ -3,14 +3,14 @@ import { z } from "zod";
 
 import { config } from "../config.js";
 import { inspectBookPlan, searchBooksByTitle } from "../crawler/qidiantu.js";
-import { getSql, hasDatabaseConfig } from "../db/client.js";
 import {
-  createCrawlJob,
-  findIntersectingBooklists,
-  getBookDetails,
-  getBookEntries,
-  getCrawlJob,
-} from "../db/repositories.js";
+  getStorageStatus,
+  storageCreateCrawlJob,
+  storageFindIntersectingBooklists,
+  storageGetBookDetails,
+  storageGetBookEntries,
+  storageGetCrawlJob,
+} from "../storage/index.js";
 import { triggerBookCrawlJob } from "../jobs/crawl-book-job.js";
 
 const createCrawlJobSchema = z.object({
@@ -39,7 +39,7 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
 
   app.get("/health", async () => ({
     ok: true,
-    databaseConfigured: hasDatabaseConfig(),
+    ...getStorageStatus(),
   }));
 
   app.get("/search/books", async (request, reply) => {
@@ -70,13 +70,8 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
   });
 
   app.post("/jobs/crawl-book", async (request, reply) => {
-    if (!hasDatabaseConfig()) {
-      return reply.code(500).send({ error: "DATABASE_URL is not configured" });
-    }
-
     const payload = createCrawlJobSchema.parse(request.body);
-    const sql = getSql();
-    const job = await createCrawlJob(sql, "crawl_book", payload.bookId, payload);
+    const job = await storageCreateCrawlJob("crawl_book", payload.bookId, payload);
 
     triggerBookCrawlJob(job.id, payload.bookId, payload.maxPages);
 
@@ -87,13 +82,8 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
   });
 
   app.get("/jobs/:jobId", async (request, reply) => {
-    if (!hasDatabaseConfig()) {
-      return reply.code(500).send({ error: "DATABASE_URL is not configured" });
-    }
-
     const { jobId } = request.params as { jobId: string };
-    const sql = getSql();
-    const job = await getCrawlJob(sql, Number(jobId));
+    const job = await storageGetCrawlJob(Number(jobId));
 
     if (!job) {
       return reply.code(404).send({ error: "Job not found" });
@@ -103,21 +93,16 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
   });
 
   app.get("/books/:bookId", async (request, reply) => {
-    if (!hasDatabaseConfig()) {
-      return reply.code(500).send({ error: "DATABASE_URL is not configured" });
-    }
-
     const { bookId } = request.params as { bookId: string };
     const page = Number((request.query as { page?: string }).page ?? "1");
     const pageSize = 20;
-    const sql = getSql();
-    const book = await getBookDetails(sql, bookId);
+    const book = await storageGetBookDetails(bookId);
 
     if (!book) {
       return reply.code(404).send({ error: "Book not found" });
     }
 
-    const entries = await getBookEntries(sql, bookId, Math.max(1, page), pageSize);
+    const entries = await storageGetBookEntries(bookId, Math.max(1, page), pageSize);
 
     return {
       book,
@@ -131,13 +116,8 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
   });
 
   app.post("/search/booklists/intersection", async (request, reply) => {
-    if (!hasDatabaseConfig()) {
-      return reply.code(500).send({ error: "DATABASE_URL is not configured" });
-    }
-
     const body = intersectionSchema.parse(request.body);
-    const sql = getSql();
-    const rows = await findIntersectingBooklists(sql, {
+    const rows = await storageFindIntersectingBooklists({
       bookIds: body.bookIds,
       limit: body.limit,
     });

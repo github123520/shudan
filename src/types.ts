@@ -3,6 +3,7 @@ export interface CrawlConfig {
   delayMs: number;
   timeoutMs: number;
   outputDir: string;
+  storageDir: string;
 }
 
 export interface BookMeta {

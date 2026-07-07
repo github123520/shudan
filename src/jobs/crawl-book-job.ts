@@ -1,7 +1,6 @@
 import { config } from "../config.js";
 import { crawlBook } from "../crawler/qidiantu.js";
-import { getSql } from "../db/client.js";
-import { upsertBookCrawlResult, updateCrawlJobStatus } from "../db/repositories.js";
+import { storageUpdateCrawlJobStatus, storageUpsertBookCrawlResult } from "../storage/index.js";
 
 const runningJobs = new Set<number>();
 
@@ -17,16 +16,14 @@ export function triggerBookCrawlJob(jobId: number, bookId: string, maxPages?: nu
   runningJobs.add(jobId);
 
   void (async () => {
-    const sql = getSql();
-
     try {
-      await updateCrawlJobStatus(sql, jobId, "running", true);
+      await storageUpdateCrawlJobStatus(jobId, "running", true);
       const result = await crawlBook(bookId, config, maxPages);
-      await upsertBookCrawlResult(sql, result);
-      await updateCrawlJobStatus(sql, jobId, "completed");
+      await storageUpsertBookCrawlResult(result);
+      await storageUpdateCrawlJobStatus(jobId, "completed");
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      await updateCrawlJobStatus(sql, jobId, "failed", false, message);
+      await storageUpdateCrawlJobStatus(jobId, "failed", false, message);
     } finally {
       runningJobs.delete(jobId);
     }
