@@ -204,7 +204,19 @@
         min-height: 34px;
       }
 
-      .field-input:focus {
+      .field-textarea {
+        width: 100%;
+        min-height: 76px;
+        border: 1px solid var(--line);
+        background: #fff;
+        color: var(--text);
+        padding: 8px 10px;
+        outline: none;
+        resize: vertical;
+      }
+
+      .field-input:focus,
+      .field-textarea:focus {
         border-color: var(--blue);
         box-shadow: inset 0 0 0 1px var(--blue);
       }
@@ -254,6 +266,7 @@
 
       .book-tile,
       .booklist-tile,
+      .library-tile,
       .load-more-card {
         background: #fff;
         box-shadow: inset 0 0 0 1px var(--line);
@@ -290,6 +303,12 @@
         grid-template-rows: auto 1fr auto;
         gap: 8px;
         min-height: 210px;
+      }
+
+      .library-tile {
+        display: grid;
+        gap: 8px;
+        min-height: 154px;
       }
 
       .tile-title {
@@ -454,6 +473,41 @@
             </div>
           </section>
 
+          <section id="library-section" class="about-section">
+            <div class="about-section-head">
+              <span class="about-pill green about-gap-after">本地书库</span>已经抓过的小说可以随时调取
+            </div>
+            <div class="about-section-body">
+              <div class="about-line">
+                <button id="library-refresh-btn" class="btn secondary" type="button">刷新本地书库</button>
+                <span class="hint-text about-gap-before">这里显示服务器已经保存的书单缓存。只要缓存不丢，后续功能都优先用本地数据。</span>
+              </div>
+              <div id="library-status" class="status-line">正在读取本地书库...</div>
+              <div id="library-books" class="catalog-grid" aria-live="polite">
+                <div class="empty-panel grid-wide">还没有读取到本地书库。</div>
+              </div>
+            </div>
+          </section>
+
+          <section id="batch-section" class="about-section">
+            <div class="about-section-head">
+              <span class="about-pill red about-gap-after">批量抓取</span>多部小说分别抓取，分别显示进度
+            </div>
+            <div class="about-section-body">
+              <div class="co-bar">
+                <div class="field-label">小说名单</div>
+                <textarea id="batch-book-queries" class="field-textarea" placeholder="每行一本，或用逗号分隔。例如：&#10;我真没想重生啊&#10;大王饶命"></textarea>
+                <div class="field-label">最大页数</div>
+                <input id="batch-max-pages" class="field-input" value="2" placeholder="清空抓全量" />
+                <button id="batch-crawl-btn" class="btn green" type="button">批量抓取</button>
+              </div>
+              <div id="batch-status" class="status-line">批量抓取会自动按书名搜索正主，然后为每本书创建独立任务。</div>
+              <div id="job-progress-list" class="booklist-grid" aria-live="polite">
+                <div class="empty-panel grid-wide">任务创建后，每本书的进度条会显示在这里。</div>
+              </div>
+            </div>
+          </section>
+
           <section class="about-section">
             <div class="about-section-head">
               <span class="about-pill green about-gap-after">小说搜索结果</span>九宫格 / 4x4 / 更多列自动适配
@@ -504,9 +558,12 @@
 
     <script>
       const state = {
+        activeJobs: new Map(),
         coPollingTimer: null,
         details: { book: null, bookId: "", entries: [], page: 0, pageSize: 20, total: 0 },
+        jobTimers: new Map(),
         jumpTimer: null,
+        libraryBooks: [],
         pollingTimer: null,
         selectedBook: null,
         selectedButton: null,
@@ -829,6 +886,140 @@
         `;
       }
 
+      function jobCardId(jobId) {
+        return `job-progress-${jobId}`;
+      }
+
+      function ensureJobProgressRoot() {
+        const root = document.getElementById("job-progress-list");
+        const empty = root.querySelector(".empty-panel");
+        if (empty) empty.remove();
+        return root;
+      }
+
+      function renderJobProgressCard(job, book = {}) {
+        const root = ensureJobProgressRoot();
+        const { label, color } = jobStatusView(job);
+        const bookTitle = book.title || state.activeJobs.get(job.id)?.book?.title || `书籍 ID ${job.target_id}`;
+        let card = document.getElementById(jobCardId(job.id));
+
+        if (!card) {
+          card = document.createElement("article");
+          card.className = "booklist-tile";
+          card.id = jobCardId(job.id);
+          root.prepend(card);
+        }
+
+        card.innerHTML = `
+          <div class="booklist-head">
+            <span class="about-pill ${color}">${escapeHtml(label)}</span>
+            <span class="about-path">${escapeHtml(bookTitle)}</span>
+            <span class="about-pill dark">任务 #${escapeHtml(job.id)}</span>
+          </div>
+          <div>
+            ${renderProgressBar(job.payload?.progress)}
+            ${job.error_message ? `<div class="about-line">${escapeHtml(job.error_message)}</div>` : ""}
+          </div>
+          <div class="tile-actions">
+            <button class="btn secondary" type="button" data-load-book-id="${escapeHtml(job.target_id)}">调用本地书单</button>
+            <button class="btn secondary" type="button" data-check-book-id="${escapeHtml(job.target_id)}">检查更新</button>
+          </div>
+        `;
+
+        card.querySelectorAll("[data-load-book-id]").forEach((button) => {
+          button.addEventListener("click", async () => {
+            await loadBookDetails(button.dataset.loadBookId, 1, false);
+            document.getElementById("booklist-section").scrollIntoView({ behavior: "smooth", block: "start" });
+          });
+        });
+        card.querySelectorAll("[data-check-book-id]").forEach((button) => {
+          button.addEventListener("click", () => checkLocalBookUpdate(button.dataset.checkBookId));
+        });
+      }
+
+      function renderLocalLibrary(books) {
+        const root = document.getElementById("library-books");
+        root.innerHTML = "";
+
+        if (!books.length) {
+          root.innerHTML = '<div class="empty-panel grid-wide">还没有本地书单。先抓取一本书，完成后会自动出现在这里。</div>';
+          return;
+        }
+
+        for (const book of books) {
+          const card = document.createElement("article");
+          card.className = "library-tile";
+          card.innerHTML = `
+            <div class="booklist-head">
+              <span class="about-pill green">本地</span>
+              <span class="about-path">${escapeHtml(book.title || book.id)}</span>
+              <span class="about-pill blue">${escapeHtml(book.entryCount || 0)} 条</span>
+            </div>
+            <div class="tile-meta">
+              ID：${escapeHtml(book.id)}<br>
+              已抓页数：${escapeHtml(book.crawledPages || "?")} / ${escapeHtml(book.sourceTotalPages || "?")}<br>
+              上次抓取：${escapeHtml(formatTime(book.fetchedAt) || "未知")}
+            </div>
+            <div class="tile-actions">
+              <button class="btn blue" type="button" data-load-book-id="${escapeHtml(book.id)}">调用本地书单</button>
+              <button class="btn secondary" type="button" data-check-book-id="${escapeHtml(book.id)}">检查更新</button>
+              ${book.qidiantuUrl ? `<button class="btn secondary" type="button" data-open-url="${escapeHtml(book.qidiantuUrl)}">原页</button>` : ""}
+            </div>
+          `;
+          root.appendChild(card);
+        }
+
+        root.querySelectorAll("[data-load-book-id]").forEach((button) => {
+          button.addEventListener("click", async () => {
+            await loadBookDetails(button.dataset.loadBookId, 1, false);
+            document.getElementById("booklist-section").scrollIntoView({ behavior: "smooth", block: "start" });
+          });
+        });
+        root.querySelectorAll("[data-check-book-id]").forEach((button) => {
+          button.addEventListener("click", () => checkLocalBookUpdate(button.dataset.checkBookId));
+        });
+        root.querySelectorAll("[data-open-url]").forEach((button) => {
+          button.addEventListener("click", () => window.open(button.dataset.openUrl, "_blank"));
+        });
+      }
+
+      async function refreshLocalLibrary() {
+        const data = await requestJson("/books");
+        state.libraryBooks = data.books || [];
+        setNotice("library-status", state.libraryBooks.length ? `本地已有 ${state.libraryBooks.length} 本小说缓存。` : "本地还没有书单缓存。", state.libraryBooks.length ? "good" : "");
+        renderLocalLibrary(state.libraryBooks);
+      }
+
+      async function checkLocalBookUpdate(bookId) {
+        setNotice("library-status", "正在检查远端是否有新增书单...");
+        const data = await requestJson(`/books/${bookId}/update-check`);
+        const book = data.local || {};
+        const status = document.getElementById("library-status");
+
+        if (!data.hasUpdate) {
+          setNotice("library-status", `《${book.title || book.id}》本地书单已是最新：${data.localCrawledPages}/${data.remote.totalPages} 页。`, "good");
+          return data;
+        }
+
+        const suggested = data.suggestedRefreshPages || "";
+        status.className = "status-line";
+        status.innerHTML = `
+          <span class="about-pill red about-gap-after">发现可补充</span>
+          ${escapeHtml(data.needsCompletion
+            ? `《${book.title || book.id}》本地还没抓全：${data.localCrawledPages}/${data.remote.totalPages} 页。建议补到 ${suggested} 页。`
+            : `《${book.title || book.id}》远端约新增 ${data.newBooklists} 条书单。建议补抓前 ${suggested} 页。`
+          )}
+          <button class="btn green about-gap-before" type="button" id="library-supplement-btn">补充更新</button>
+        `;
+        document.getElementById("library-supplement-btn").addEventListener("click", () => {
+          const sourceBook = { bookId: book.id, title: book.title };
+          void startCrawlForBook(sourceBook, suggested ? String(suggested) : "", { loadOnComplete: false }).catch((error) => {
+            setNotice("library-status", humanError(error), "bad");
+          });
+        });
+        return data;
+      }
+
       function renderTaskProgress(job) {
         const { label, color } = jobStatusView(job);
         const progressData = job.payload?.progress;
@@ -967,6 +1158,16 @@
         });
       }
 
+      async function startCrawlForBook(book, maxPagesRaw, options = {}) {
+        const data = await createCrawlJob(String(book.bookId || book.id), maxPagesRaw);
+        return startJobPolling(data.jobId, String(book.bookId || book.id), {
+          book,
+          loadOnComplete: options.loadOnComplete ?? false,
+          primary: options.primary ?? false,
+          toastOnComplete: options.toastOnComplete ?? false,
+        });
+      }
+
       async function getCachedBook(bookId) {
         const response = await fetch(`/books/${bookId}?page=1`);
         const text = await response.text();
@@ -1047,8 +1248,7 @@
           </div>
           ${renderProgressBar(null)}
         `);
-        const job = await createCrawlJob(book.bookId, maxPagesRaw);
-        await waitForCrawlJob(job.jobId, book);
+        await startCrawlForBook(book, maxPagesRaw, { loadOnComplete: false, primary: false });
         return getCachedBook(book.bookId);
       }
 
@@ -1148,9 +1348,7 @@
           throw new Error("目标小说和 A 是同一本，无法做共现查询。");
         }
 
-        for (const book of targetBooks) {
-          await ensureTargetBookCached(book, maxPagesRaw);
-        }
+        await Promise.all(targetBooks.map((book) => ensureTargetBookCached(book, maxPagesRaw)));
 
         const bookIds = [String(sourceBookId), ...targetBooks.map((book) => String(book.bookId))];
         setCoStatus(`
@@ -1175,56 +1373,106 @@
         `, "good");
       }
 
-      function stopJobPolling() {
+      function stopJobPolling(jobId) {
+        if (jobId !== undefined) {
+          const timer = state.jobTimers.get(jobId);
+          if (timer) clearInterval(timer);
+          state.jobTimers.delete(jobId);
+          return;
+        }
+
         if (state.pollingTimer) {
           clearInterval(state.pollingTimer);
           state.pollingTimer = null;
         }
+        for (const timer of state.jobTimers.values()) {
+          clearInterval(timer);
+        }
+        state.jobTimers.clear();
       }
 
-      function startJobPolling(jobId, bookId) {
-        stopJobPolling();
-        const createButton = document.getElementById("job-create-btn");
+      function startJobPolling(jobId, bookId, options = {}) {
+        stopJobPolling(jobId);
+        const book = options.book || state.selectedBook || { bookId, title: `书籍 ID ${bookId}` };
+        state.activeJobs.set(jobId, { book, bookId });
 
-        const poll = async () => {
-          try {
-            const job = await requestJson(`/jobs/${jobId}`);
-            renderTaskProgress(job);
+        return new Promise((resolve, reject) => {
+          const poll = async () => {
+            try {
+              const job = await requestJson(`/jobs/${jobId}`);
+              if (options.primary !== false) {
+                renderTaskProgress(job);
+              }
+              renderJobProgressCard(job, book);
 
-            if (job.status === "completed") {
-              stopJobPolling();
-              setButtonBusy(createButton, false);
-              document.getElementById("book-details-result").innerHTML = '<div class="empty-panel grid-wide">任务已完成，正在整理书单结果...</div>';
-              await loadBookDetails(bookId, 1, false);
-              showToast("任务完成", "书单结果已生成，3 秒后自动跳到结果区。", 3, () => {
-                document.getElementById("booklist-section").scrollIntoView({ behavior: "smooth", block: "start" });
-                history.replaceState(null, "", "#booklist-section");
-              });
-              return;
+              if (job.status === "completed") {
+                stopJobPolling(jobId);
+                await refreshLocalLibrary().catch(() => undefined);
+
+                if (options.loadOnComplete !== false) {
+                  document.getElementById("book-details-result").innerHTML = '<div class="empty-panel grid-wide">任务已完成，正在整理书单结果...</div>';
+                  await loadBookDetails(bookId, 1, false);
+                }
+
+                if (options.toastOnComplete !== false) {
+                  showToast("任务完成", `《${book.title || bookId}》书单结果已保存到本地书库。`, 3, () => {
+                    document.getElementById("library-section").scrollIntoView({ behavior: "smooth", block: "start" });
+                  });
+                }
+
+                resolve(job);
+                return;
+              }
+
+              if (job.status === "failed") {
+                stopJobPolling(jobId);
+                showToast("任务失败", job.error_message || "抓取任务没有完成。", 5);
+                reject(new Error(job.error_message || "抓取任务没有完成。"));
+              }
+            } catch (error) {
+              stopJobPolling(jobId);
+              const progress = document.getElementById("task-progress");
+              progress.className = "progress-card bad";
+              progress.textContent = humanError(error);
+              reject(error);
             }
+          };
 
-            if (job.status === "failed") {
-              stopJobPolling();
-              setButtonBusy(createButton, false);
-              showToast("任务失败", job.error_message || "抓取任务没有完成。", 5);
-            }
-          } catch (error) {
-            stopJobPolling();
-            setButtonBusy(createButton, false);
-            const progress = document.getElementById("task-progress");
-            progress.className = "progress-card bad";
-            progress.textContent = humanError(error);
-          }
-        };
-
-        void poll();
-        state.pollingTimer = setInterval(poll, 3000);
+          void poll();
+          state.jobTimers.set(jobId, setInterval(poll, 3000));
+        });
       }
 
       async function refreshHealth() {
         const data = await requestJson("/health");
         setStorageStatus(data);
         return data;
+      }
+
+      async function runBatchCrawl() {
+        const queries = splitBookQueries(document.getElementById("batch-book-queries").value);
+        const maxPagesRaw = document.getElementById("batch-max-pages").value.trim();
+
+        if (!queries.length) {
+          throw new Error("请输入至少一本小说名。");
+        }
+
+        setNotice("batch-status", `准备批量抓取 ${queries.length} 本小说...`);
+        const started = [];
+        for (const query of queries) {
+          setNotice("batch-status", `正在搜索《${query}》并自动选择正主...`);
+          const book = await searchBestBookByTitle(query);
+          const data = await createCrawlJob(book.bookId, maxPagesRaw);
+          started.push(book);
+          void startJobPolling(data.jobId, book.bookId, {
+            book,
+            loadOnComplete: false,
+            primary: false,
+            toastOnComplete: false,
+          }).catch(() => undefined);
+        }
+
+        setNotice("batch-status", `已创建 ${started.length} 个抓取任务，它们会分别显示进度。`, "good");
       }
 
       document.getElementById("search-book-btn").addEventListener("click", async () => {
@@ -1280,11 +1528,7 @@
           return;
         }
 
-        const payload = { bookId };
-        if (maxPagesRaw) payload.maxPages = Number(maxPagesRaw);
-
-        stopJobPolling();
-        setButtonBusy(button, true, "抓取中...");
+        setButtonBusy(button, true, "创建中...");
         document.getElementById("task-progress").className = "progress-card";
         document.getElementById("task-progress").innerHTML = `
           <div class="about-line">
@@ -1295,11 +1539,8 @@
         document.getElementById("book-details-result").innerHTML = '<div class="empty-panel grid-wide">任务正在后台抓取，完成后会自动展示结果。</div>';
 
         try {
-          const data = await requestJson("/jobs/crawl-book", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          });
+          const data = await createCrawlJob(bookId, maxPagesRaw);
+          const book = state.selectedBook || { bookId, title: `书籍 ID ${bookId}` };
           document.getElementById("task-progress").innerHTML = `
             <div class="about-line">
               <span class="about-pill red about-gap-after">抓取中</span>
@@ -1308,7 +1549,13 @@
             </div>
             ${renderProgressBar(null)}
           `;
-          startJobPolling(data.jobId, bookId);
+          void startJobPolling(data.jobId, bookId, {
+            book,
+            loadOnComplete: true,
+            primary: true,
+            toastOnComplete: true,
+          }).catch(() => undefined);
+          setButtonBusy(button, false);
         } catch (error) {
           setButtonBusy(button, false);
           const progress = document.getElementById("task-progress");
@@ -1341,10 +1588,37 @@
         }
       });
 
+      document.getElementById("library-refresh-btn").addEventListener("click", async () => {
+        const button = document.getElementById("library-refresh-btn");
+        setButtonBusy(button, true, "刷新中...");
+        try {
+          await refreshLocalLibrary();
+        } catch (error) {
+          setNotice("library-status", humanError(error), "bad");
+        } finally {
+          setButtonBusy(button, false);
+        }
+      });
+
+      document.getElementById("batch-crawl-btn").addEventListener("click", async () => {
+        const button = document.getElementById("batch-crawl-btn");
+        setButtonBusy(button, true, "创建中...");
+        try {
+          await runBatchCrawl();
+        } catch (error) {
+          setNotice("batch-status", humanError(error), "bad");
+        } finally {
+          setButtonBusy(button, false);
+        }
+      });
+
       refreshHealth().catch((error) => {
         const status = document.getElementById("service-status");
         status.className = "status-line bad";
         status.textContent = humanError(error);
+      });
+      refreshLocalLibrary().catch((error) => {
+        setNotice("library-status", humanError(error), "bad");
       });
     </script>
   </body>

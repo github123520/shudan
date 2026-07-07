@@ -22,6 +22,9 @@ export interface BookDetails {
   fetchedAt: string;
   entryCount: number;
   latestIncludedAt: string | null;
+  sourceTotalBooklists?: number | null;
+  sourceTotalPages?: number | null;
+  crawledPages?: number | null;
 }
 
 export interface IntersectionQuery {
@@ -159,7 +162,10 @@ export async function getBookDetails(sql: Sql, bookId: string): Promise<BookDeta
       b.qidiantu_url AS "qidiantuUrl",
       b.fetched_at::text AS "fetchedAt",
       COUNT(be.id)::int AS "entryCount",
-      MAX(be.included_at)::text AS "latestIncludedAt"
+      MAX(be.included_at)::text AS "latestIncludedAt",
+      NULL::int AS "sourceTotalBooklists",
+      NULL::int AS "sourceTotalPages",
+      NULL::int AS "crawledPages"
     FROM books b
     LEFT JOIN booklist_entries be ON be.book_id = b.id
     WHERE b.id = ${bookId}
@@ -167,6 +173,25 @@ export async function getBookDetails(sql: Sql, bookId: string): Promise<BookDeta
   `;
 
   return book ?? null;
+}
+
+export async function listBookDetails(sql: Sql): Promise<BookDetails[]> {
+  return sql<BookDetails[]>`
+    SELECT
+      b.id::text AS id,
+      b.title,
+      b.qidiantu_url AS "qidiantuUrl",
+      b.fetched_at::text AS "fetchedAt",
+      COUNT(be.id)::int AS "entryCount",
+      MAX(be.included_at)::text AS "latestIncludedAt",
+      NULL::int AS "sourceTotalBooklists",
+      NULL::int AS "sourceTotalPages",
+      NULL::int AS "crawledPages"
+    FROM books b
+    LEFT JOIN booklist_entries be ON be.book_id = b.id
+    GROUP BY b.id
+    ORDER BY b.fetched_at DESC, b.id DESC
+  `;
 }
 
 export async function getBookEntries(

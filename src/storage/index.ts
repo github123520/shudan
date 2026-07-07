@@ -10,6 +10,7 @@ import {
   getBookDetails,
   getBookEntries,
   getCrawlJob,
+  listBookDetails,
   upsertBookCrawlResult,
   updateCrawlJobProgress,
   updateCrawlJobStatus,
@@ -22,6 +23,7 @@ import {
   fileGetBookDetails,
   fileGetBookEntries,
   fileGetCrawlJob,
+  fileListBookDetails,
   fileUpdateCrawlJobProgress,
   fileUpdateCrawlJobStatus,
   fileUpsertBookCrawlResult,
@@ -101,6 +103,14 @@ export async function storageGetBookDetails(bookId: string) {
   }
 
   return fileGetBookDetails(bookId);
+}
+
+export async function storageListBookDetails() {
+  if (hasDatabaseConfig()) {
+    return listBookDetails(getSql());
+  }
+
+  return fileListBookDetails();
 }
 
 export async function storageGetBookEntries(bookId: string, page: number, pageSize: number) {

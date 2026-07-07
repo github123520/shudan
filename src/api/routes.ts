@@ -11,6 +11,7 @@ import {
   storageGetBookDetails,
   storageGetBookEntries,
   storageGetCrawlJob,
+  storageListBookDetails,
 } from "../storage/index.js";
 import { triggerBookCrawlJob } from "../jobs/crawl-book-job.js";
 
@@ -70,7 +71,9 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
     routes: [
       "GET /health",
       "GET /search/books?q=title",
+      "GET /books",
       "GET /books/:bookId/plan",
+      "GET /books/:bookId/update-check",
       "POST /jobs/crawl-book",
       "GET /jobs/:jobId",
       "GET /books/:bookId",
@@ -108,6 +111,49 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
     return {
       ...meta,
       estimatedSecondsAtConfiguredDelay: (meta.totalPages * config.delayMs) / 1000,
+    };
+  });
+
+  app.get("/books", async () => {
+    const books = await storageListBookDetails();
+
+    return {
+      total: books.length,
+      books,
+    };
+  });
+
+  app.get("/books/:bookId/update-check", async (request, reply) => {
+    const { bookId } = request.params as { bookId: string };
+    const local = await storageGetBookDetails(bookId);
+
+    if (!local) {
+      return reply.code(404).send({ error: "Book not found in local library" });
+    }
+
+    const remote = await inspectBookPlan(bookId, config);
+    const localCrawledPages = local.crawledPages ?? Math.ceil(local.entryCount / 10);
+    const localKnownTotal = local.sourceTotalBooklists ?? local.entryCount;
+    const needsCompletion = localCrawledPages < remote.totalPages;
+    const newBooklists = Math.max(0, remote.totalBooklists - localKnownTotal);
+    const hasUpdate = needsCompletion || newBooklists > 0;
+    const suggestedRefreshPages = needsCompletion
+      ? remote.totalPages
+      : newBooklists > 0
+        ? Math.min(remote.totalPages, Math.max(1, Math.ceil(newBooklists / 10) + 1))
+        : 0;
+
+    return {
+      local,
+      remote,
+      hasUpdate,
+      needsCompletion,
+      newBooklists,
+      localCrawledPages,
+      suggestedRefreshPages,
+      estimatedSecondsAtConfiguredDelay: suggestedRefreshPages
+        ? (suggestedRefreshPages * config.delayMs) / 1000
+        : 0,
     };
   });
 

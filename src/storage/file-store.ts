@@ -141,6 +141,7 @@ export async function fileUpsertBookCrawlResult(result: BookCrawlResult): Promis
 
   await writeJson(bookPath(result.meta.bookId), {
     ...result,
+    crawledPages: Math.max(existing?.crawledPages ?? 0, result.crawledPages),
     entries: [...merged.values()],
   });
 }
@@ -163,7 +164,36 @@ export async function fileGetBookDetails(bookId: string): Promise<BookDetails | 
     fetchedAt: result.crawledAt,
     entryCount: result.entries.length,
     latestIncludedAt: includedDates.sort().at(-1) ?? null,
+    sourceTotalBooklists: result.meta.totalBooklists,
+    sourceTotalPages: result.meta.totalPages,
+    crawledPages: result.crawledPages,
   };
+}
+
+export async function fileListBookDetails(): Promise<BookDetails[]> {
+  await ensureStore();
+
+  let files: string[];
+  try {
+    files = await fs.readdir(booksDir);
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code === "ENOENT") {
+      return [];
+    }
+
+    throw error;
+  }
+
+  const books = await Promise.all(
+    files
+      .filter((file) => file.endsWith(".json"))
+      .map(async (file) => fileGetBookDetails(path.basename(file, ".json"))),
+  );
+
+  return books
+    .filter((book): book is BookDetails => book !== null)
+    .sort((a, b) => String(b.fetchedAt).localeCompare(String(a.fetchedAt)));
 }
 
 export async function fileGetBookEntries(
