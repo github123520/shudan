@@ -91,6 +91,11 @@
         gap: 10px;
         grid-template-columns: 1.15fr 0.85fr;
       }
+      .primary-grid {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: 1fr 1fr;
+      }
       .field-grid { display: grid; gap: 6px; }
       .field-row {
         display: grid;
@@ -137,6 +142,7 @@
       .btn.green { background: var(--green); }
       .btn.red { background: var(--red); }
       .btn.is-selected { background: var(--green); }
+      .btn.is-busy { background: var(--dark); }
       .btn:disabled { opacity: 0.55; cursor: not-allowed; }
       .book-results { display: grid; gap: 8px; }
       .book-card {
@@ -153,7 +159,7 @@
       .book-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
       .selected-book { padding: 8px; background: #f0f7ff; box-shadow: inset 0 0 0 1px #b6d8ff; }
       .result-box {
-        max-height: 240px;
+        max-height: 180px;
         overflow: auto;
         border: 1px solid var(--line);
         background: #fbfcfd;
@@ -165,8 +171,46 @@
       .status-line.good { background: #edf8f1; box-shadow: inset 0 0 0 1px #9bd4ae; }
       .status-line.bad { background: #fff1f1; box-shadow: inset 0 0 0 1px #efaaaa; }
       .mini-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+      .book-summary {
+        display: grid;
+        gap: 6px;
+        padding: 8px;
+        background: #f7fbff;
+        box-shadow: inset 0 0 0 1px #b6d8ff;
+      }
+      .comment-list {
+        display: grid;
+        gap: 8px;
+      }
+      .comment-card {
+        background: #fff;
+        box-shadow: inset 0 0 0 1px var(--line);
+      }
+      .comment-head {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        align-items: center;
+        border-bottom: 1px solid var(--line);
+        background: var(--head);
+        padding: 5px 8px;
+      }
+      .comment-body {
+        padding: 8px;
+        display: grid;
+        gap: 6px;
+      }
+      .comment-body p {
+        margin: 0;
+        line-height: 1.7;
+      }
+      .comment-empty {
+        color: var(--muted);
+        font-style: italic;
+      }
       @media (max-width: 860px) {
         .layout-grid { grid-template-columns: 1fr; }
+        .primary-grid { grid-template-columns: 1fr; }
         .field-row { grid-template-columns: 1fr; }
         .field-label { justify-content: flex-start; min-height: 28px; }
       }
@@ -191,7 +235,7 @@
                 <div id="selected-book" class="selected-book" hidden></div>
               </div>
             </section>
-            <div class="layout-grid">
+            <div class="primary-grid">
               <section class="about-section">
                 <div class="about-section-head">
                   <span class="about-pill blue about-gap-after">搜书</span>按书名选书
@@ -211,15 +255,28 @@
               </section>
               <section class="about-section">
                 <div class="about-section-head">
-                  <span class="about-pill dark about-gap-after">说明</span>为什么创建任务失败
+                  <span class="about-pill red about-gap-after">抓取</span>创建任务
                 </div>
                 <div class="about-section-body">
-                  <div class="about-line">默认会使用<span class="about-pill green about-gap-before about-gap-after">文件存储</span>，不需要单独部署数据库。</div>
-                  <div class="about-line">如果以后接入 PostgreSQL，应用也会自动识别<span class="about-path about-gap-before about-gap-after">DATABASE_URL</span><span class="about-path about-gap-after">POSTGRES_CONNECTION_STRING</span><span class="about-path about-gap-after">POSTGRES_URI</span>等连接变量。</div>
-                  <div class="mini-actions">
-                    <button id="health-btn" class="btn secondary" type="button">重新检查环境</button>
-                    <button id="open-api-btn" class="btn secondary" type="button">打开 API 导航</button>
+                  <div class="field-grid">
+                    <div class="field-row">
+                      <div class="field-label">书籍 ID</div>
+                      <input id="job-book-id" class="field-input" value="1015648531" />
+                      <button id="job-create-btn" class="btn green" type="button">创建任务</button>
+                    </div>
+                    <div class="field-row">
+                      <div class="field-label">最大页数</div>
+                      <input id="job-max-pages" class="field-input" value="2" placeholder="清空则抓全量" />
+                      <button id="job-status-btn" class="btn secondary" type="button">查询任务</button>
+                    </div>
+                    <div class="field-row">
+                      <div class="field-label">任务 ID</div>
+                      <input id="job-id" class="field-input" placeholder="创建后自动回填" />
+                      <button id="book-details-btn" class="btn secondary" type="button">查看结果</button>
+                    </div>
                   </div>
+                  <div id="job-create-result" class="result-box">等待操作…</div>
+                  <div id="job-status-result" class="result-box">等待操作…</div>
                 </div>
               </section>
             </div>
@@ -239,34 +296,6 @@
               </section>
               <section class="about-section">
                 <div class="about-section-head">
-                  <span class="about-pill red about-gap-after">抓取</span>创建任务
-                </div>
-                <div class="about-section-body">
-                  <div class="field-grid">
-                    <div class="field-row">
-                      <div class="field-label">书籍 ID</div>
-                      <input id="job-book-id" class="field-input" value="1015648531" />
-                      <button id="job-create-btn" class="btn green" type="button">创建任务</button>
-                    </div>
-                    <div class="field-row">
-                      <div class="field-label">最大页数</div>
-                      <input id="job-max-pages" class="field-input" placeholder="第一次建议填 1 或 2" />
-                      <button id="job-status-btn" class="btn secondary" type="button">查询任务</button>
-                    </div>
-                    <div class="field-row">
-                      <div class="field-label">任务 ID</div>
-                      <input id="job-id" class="field-input" placeholder="创建后自动回填" />
-                      <button id="book-details-btn" class="btn secondary" type="button">查看结果</button>
-                    </div>
-                  </div>
-                  <div id="job-create-result" class="result-box">等待操作…</div>
-                  <div id="job-status-result" class="result-box">等待操作…</div>
-                </div>
-              </section>
-            </div>
-            <div class="layout-grid">
-              <section class="about-section">
-                <div class="about-section-head">
                   <span class="about-pill dark about-gap-after">单书</span>已入库结果
                 </div>
                 <div class="about-section-body">
@@ -275,9 +304,13 @@
                     <input id="book-details-id" class="field-input" value="1015648531" />
                     <input id="book-details-page" class="field-input" value="1" />
                   </div>
-                  <div id="book-details-result" class="result-box">等待操作…</div>
+                  <div id="book-details-result" class="comment-list">
+                    <div class="status-line">等待抓取完成后自动展示结果…</div>
+                  </div>
                 </div>
               </section>
+            </div>
+            <div class="layout-grid">
               <section class="about-section">
                 <div class="about-section-head">
                   <span class="about-pill blue about-gap-after">交集</span>多书找书单
@@ -298,6 +331,18 @@
                   <div id="intersection-result" class="result-box">等待操作…</div>
                 </div>
               </section>
+              <section class="about-section">
+                <div class="about-section-head">
+                  <span class="about-pill dark about-gap-after">说明</span>存储状态
+                </div>
+                <div class="about-section-body">
+                  <div class="about-line">默认使用<span class="about-pill green about-gap-before about-gap-after">文件存储</span>，不需要单独部署数据库。</div>
+                  <div class="mini-actions">
+                    <button id="health-btn" class="btn secondary" type="button">重新检查环境</button>
+                    <button id="open-api-btn" class="btn secondary" type="button">打开 API 导航</button>
+                  </div>
+                </div>
+              </section>
             </div>
           </div>
         </div>
@@ -305,11 +350,107 @@
     </main>
     <script>
       const apiBase = window.location.origin;
-      const state = { storageDriver: "file", selectedButton: null };
+      const state = { storageDriver: "file", selectedButton: null, pollingTimer: null };
       document.getElementById("api-base").textContent = apiBase;
 
       function setResult(id, data) {
         document.getElementById(id).textContent = typeof data === "string" ? data : JSON.stringify(data, null, 2);
+      }
+
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      function splitParagraphs(text) {
+        return String(text || "")
+          .replaceAll("\\n", "\n")
+          .split(/\n+/)
+          .map((line) => line.trim())
+          .filter(Boolean);
+      }
+
+      function setButtonBusy(button, busy, label) {
+        if (busy) {
+          button.dataset.originalText = button.textContent;
+          button.textContent = label;
+          button.disabled = true;
+          button.classList.add("is-busy");
+          return;
+        }
+
+        button.textContent = button.dataset.originalText || button.textContent;
+        button.disabled = false;
+        button.classList.remove("is-busy");
+      }
+
+      function renderJobStatus(job) {
+        const statusLabel = {
+          queued: "排队中",
+          running: "抓取中",
+          completed: "已完成",
+          failed: "失败",
+        }[job.status] || job.status;
+
+        return {
+          jobId: job.id,
+          status: statusLabel,
+          rawStatus: job.status,
+          attempts: job.attempts,
+          targetId: job.target_id,
+          updatedAt: job.updated_at,
+          error: job.error_message,
+        };
+      }
+
+      function renderBookDetails(data) {
+        const root = document.getElementById("book-details-result");
+        const entries = data.entries || [];
+        const book = data.book || {};
+        const pagination = data.pagination || {};
+
+        if (!entries.length) {
+          root.innerHTML = '<div class="status-line">这本书还没有抓到评语。先创建抓取任务，完成后会自动出现在这里。</div>';
+          return;
+        }
+
+        const cards = entries.map((entry, index) => {
+          const paragraphs = splitParagraphs(entry.commentText);
+          const body = paragraphs.length
+            ? paragraphs.map((line) => `<p>${escapeHtml(line)}</p>`).join("")
+            : '<p class="comment-empty">这条收录没有评语正文。</p>';
+          const order = (pagination.page - 1) * pagination.pageSize + index + 1;
+
+          return `
+            <article class="comment-card">
+              <div class="comment-head">
+                <span class="about-pill blue">#${order}</span>
+                <span class="about-path">${escapeHtml(entry.booklistTitle || "未知书单")}</span>
+                ${entry.booklistFollowerCount !== null && entry.booklistFollowerCount !== undefined ? `<span class="about-pill green">${entry.booklistFollowerCount}人关注</span>` : ""}
+                ${entry.hearts !== null && entry.hearts !== undefined ? `<span class="about-pill red">心 ${entry.hearts}</span>` : ""}
+                ${entry.includedAt ? `<span class="about-pill dark">${escapeHtml(entry.includedAt)}</span>` : ""}
+              </div>
+              <div class="comment-body">${body}</div>
+            </article>
+          `;
+        }).join("");
+
+        root.innerHTML = `
+          <div class="book-summary">
+            <div class="about-line">
+              <span class="about-pill green about-gap-after">结果</span>
+              <span class="about-path about-gap-after">${escapeHtml(book.title || book.id || "未知书籍")}</span>
+              已抓到 <span class="about-pill blue about-gap-before about-gap-after">${pagination.total ?? entries.length}条</span>
+              当前第 <span class="about-pill dark about-gap-before about-gap-after">${pagination.page ?? 1}页</span>
+            </div>
+            <div class="about-line">来源：<span class="about-path about-gap-before">${escapeHtml(book.qidiantuUrl || "")}</span></div>
+          </div>
+          ${cards}
+        `;
       }
 
       function renderSelectedBook(book) {
@@ -422,6 +563,50 @@
         return data;
       }
 
+      async function loadBookDetails(bookId) {
+        const page = document.getElementById("book-details-page").value.trim() || "1";
+        const data = await requestJson(`/books/${bookId}?page=${encodeURIComponent(page)}`);
+        renderBookDetails(data);
+      }
+
+      function stopJobPolling() {
+        if (state.pollingTimer) {
+          clearInterval(state.pollingTimer);
+          state.pollingTimer = null;
+        }
+      }
+
+      function startJobPolling(jobId, bookId) {
+        stopJobPolling();
+        const poll = async () => {
+          try {
+            const job = await requestJson(`/jobs/${jobId}`);
+            setResult("job-status-result", renderJobStatus(job));
+
+            if (job.status === "completed") {
+              stopJobPolling();
+              setResult("job-create-result", "任务已完成，正在加载结果…");
+              await loadBookDetails(bookId);
+              setResult("job-create-result", "任务已完成，结果已加载。");
+            }
+
+            if (job.status === "failed") {
+              stopJobPolling();
+              setResult("job-create-result", {
+                message: "任务失败",
+                error: job.error_message,
+              });
+            }
+          } catch (error) {
+            stopJobPolling();
+            setResult("job-status-result", String(error));
+          }
+        };
+
+        void poll();
+        state.pollingTimer = setInterval(poll, 3000);
+      }
+
       document.getElementById("open-api-btn").addEventListener("click", () => window.open("/api", "_blank"));
       document.getElementById("health-btn").addEventListener("click", async () => {
         try { setResult("job-status-result", await refreshHealth()); }
@@ -448,11 +633,15 @@
         catch (error) { setResult("plan-result", String(error)); }
       });
       document.getElementById("job-create-btn").addEventListener("click", async () => {
+        const button = document.getElementById("job-create-btn");
         const bookId = document.getElementById("job-book-id").value.trim();
         const maxPagesRaw = document.getElementById("job-max-pages").value.trim();
         const payload = { bookId };
         if (maxPagesRaw) payload.maxPages = Number(maxPagesRaw);
-        setResult("job-create-result", "提交中…");
+        stopJobPolling();
+        setResult("job-create-result", "正在创建任务…");
+        setResult("job-status-result", "等待任务状态…");
+        setButtonBusy(button, true, "创建中…");
         try {
           const data = await requestJson("/jobs/crawl-book", {
             method: "POST",
@@ -460,8 +649,17 @@
             body: JSON.stringify(payload),
           });
           if (data.jobId) document.getElementById("job-id").value = String(data.jobId);
-          setResult("job-create-result", data);
-        } catch (error) { setResult("job-create-result", String(error)); }
+          setResult("job-create-result", {
+            message: "任务已创建，正在后台抓取。页面会自动刷新任务状态。",
+            ...data,
+            maxPages: payload.maxPages || "全量",
+          });
+          startJobPolling(data.jobId, bookId);
+        } catch (error) {
+          setResult("job-create-result", String(error));
+        } finally {
+          setButtonBusy(button, false);
+        }
       });
       document.getElementById("job-status-btn").addEventListener("click", async () => {
         const jobId = document.getElementById("job-id").value.trim();
@@ -471,10 +669,11 @@
       });
       document.getElementById("book-details-btn").addEventListener("click", async () => {
         const bookId = document.getElementById("book-details-id").value.trim();
-        const page = document.getElementById("book-details-page").value.trim() || "1";
-        setResult("book-details-result", "查询中…");
-        try { setResult("book-details-result", await requestJson(`/books/${bookId}?page=${encodeURIComponent(page)}`)); }
-        catch (error) { setResult("book-details-result", String(error)); }
+        document.getElementById("book-details-result").innerHTML = '<div class="status-line">正在加载结果…</div>';
+        try { await loadBookDetails(bookId); }
+        catch (error) {
+          document.getElementById("book-details-result").innerHTML = `<div class="status-line bad">${escapeHtml(String(error))}</div>`;
+        }
       });
       document.getElementById("intersection-btn").addEventListener("click", async () => {
         const bookIds = document.getElementById("intersection-book-ids").value.split(",").map((item) => item.trim()).filter(Boolean);
