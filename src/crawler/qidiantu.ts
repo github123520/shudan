@@ -2,7 +2,15 @@ import * as cheerio from "cheerio";
 
 import { sha1 } from "../lib/hash.js";
 import { sleep } from "../lib/sleep.js";
-import type { BookCrawlResult, BookMeta, BookSearchResult, BooklistEntry, CrawlConfig } from "../types.js";
+import type {
+  BookCrawlResult,
+  BookMeta,
+  BookSearchResult,
+  BooklistEntry,
+  CrawlBookOptions,
+  CrawlConfig,
+  CrawlProgress,
+} from "../types.js";
 
 const PAGE_SIZE = 10;
 
@@ -219,25 +227,86 @@ export async function searchBooksByTitle(query: string, config: CrawlConfig): Pr
   return results;
 }
 
-export async function crawlBook(bookId: string, config: CrawlConfig, maxPages?: number): Promise<BookCrawlResult> {
+function normalizeCrawlOptions(options?: number | CrawlBookOptions): CrawlBookOptions {
+  if (typeof options === "number") {
+    return { maxPages: options };
+  }
+
+  return options ?? {};
+}
+
+async function emitProgress(
+  options: CrawlBookOptions,
+  progress: Omit<CrawlProgress, "updatedAt">,
+): Promise<void> {
+  if (!options.onProgress) {
+    return;
+  }
+
+  await options.onProgress({
+    ...progress,
+    updatedAt: new Date().toISOString(),
+  });
+}
+
+export async function crawlBook(
+  bookId: string,
+  config: CrawlConfig,
+  optionsInput?: number | CrawlBookOptions,
+): Promise<BookCrawlResult> {
+  const options = normalizeCrawlOptions(optionsInput);
   const sourceUrl = bookInfoUrl(config.baseUrl, bookId, 0);
   const firstHtml = await fetchHtml(sourceUrl, config.timeoutMs);
   const meta = parseMeta(bookId, sourceUrl, firstHtml);
+  const lastPage = options.maxPages ? Math.min(meta.totalPages, options.maxPages) : meta.totalPages;
 
   const allEntries: BooklistEntry[] = [];
-  allEntries.push(...parseEntries(firstHtml, 1, config.baseUrl));
+  await emitProgress(options, {
+    phase: "planning",
+    currentPage: 0,
+    targetPages: lastPage,
+    sourceTotalPages: meta.totalPages,
+    totalBooklists: meta.totalBooklists,
+    crawledEntries: 0,
+  });
 
-  const lastPage = maxPages ? Math.min(meta.totalPages, maxPages) : meta.totalPages;
+  allEntries.push(...parseEntries(firstHtml, 1, config.baseUrl));
+  await emitProgress(options, {
+    phase: "crawling",
+    currentPage: 1,
+    targetPages: lastPage,
+    sourceTotalPages: meta.totalPages,
+    totalBooklists: meta.totalBooklists,
+    crawledEntries: allEntries.length,
+  });
 
   for (let page = 2; page <= lastPage; page += 1) {
     await sleep(config.delayMs);
     const html = await fetchHtml(bookInfoUrl(config.baseUrl, bookId, page - 1), config.timeoutMs);
     allEntries.push(...parseEntries(html, page, config.baseUrl));
+    await emitProgress(options, {
+      phase: "crawling",
+      currentPage: page,
+      targetPages: lastPage,
+      sourceTotalPages: meta.totalPages,
+      totalBooklists: meta.totalBooklists,
+      crawledEntries: allEntries.length,
+    });
   }
+
+  const entries = dedupeEntries(allEntries);
+  await emitProgress(options, {
+    phase: "completed",
+    currentPage: lastPage,
+    targetPages: lastPage,
+    sourceTotalPages: meta.totalPages,
+    totalBooklists: meta.totalBooklists,
+    crawledEntries: entries.length,
+  });
 
   return {
     meta,
-    entries: dedupeEntries(allEntries),
+    entries,
     crawledPages: lastPage,
     crawledAt: new Date().toISOString(),
   };

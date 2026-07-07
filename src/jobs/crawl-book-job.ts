@@ -1,6 +1,10 @@
 import { config } from "../config.js";
 import { crawlBook } from "../crawler/qidiantu.js";
-import { storageUpdateCrawlJobStatus, storageUpsertBookCrawlResult } from "../storage/index.js";
+import {
+  storageUpdateCrawlJobProgress,
+  storageUpdateCrawlJobStatus,
+  storageUpsertBookCrawlResult,
+} from "../storage/index.js";
 
 const runningJobs = new Set<number>();
 
@@ -18,7 +22,10 @@ export function triggerBookCrawlJob(jobId: number, bookId: string, maxPages?: nu
   void (async () => {
     try {
       await storageUpdateCrawlJobStatus(jobId, "running", true);
-      const result = await crawlBook(bookId, config, maxPages);
+      const result = await crawlBook(bookId, config, {
+        maxPages,
+        onProgress: (progress) => storageUpdateCrawlJobProgress(jobId, progress),
+      });
       await storageUpsertBookCrawlResult(result);
       await storageUpdateCrawlJobStatus(jobId, "completed");
     } catch (error) {

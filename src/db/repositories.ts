@@ -1,7 +1,7 @@
 import type { Sql } from "postgres";
 
 import { sha1 } from "../lib/hash.js";
-import type { BookCrawlResult } from "../types.js";
+import type { BookCrawlResult, CrawlProgress } from "../types.js";
 
 export interface CrawlJobRecord {
   id: number;
@@ -122,6 +122,20 @@ export async function updateCrawlJobStatus(
       status = ${status},
       attempts = attempts + ${incrementAttempts ? 1 : 0},
       error_message = ${errorMessage ?? null},
+      updated_at = NOW()
+    WHERE id = ${jobId}
+  `;
+}
+
+export async function updateCrawlJobProgress(
+  sql: Sql,
+  jobId: number,
+  progress: CrawlProgress,
+): Promise<void> {
+  await sql`
+    UPDATE crawl_jobs
+    SET
+      payload = payload || ${sql.json({ progress } as never)}::jsonb,
       updated_at = NOW()
     WHERE id = ${jobId}
   `;

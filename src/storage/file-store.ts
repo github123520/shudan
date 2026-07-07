@@ -3,7 +3,7 @@ import path from "node:path";
 
 import { config } from "../config.js";
 import { sha1 } from "../lib/hash.js";
-import type { BookCrawlResult, BooklistEntry } from "../types.js";
+import type { BookCrawlResult, BooklistEntry, CrawlProgress } from "../types.js";
 import type { BookDetails, CrawlJobRecord, IntersectionQuery } from "../db/repositories.js";
 
 interface FileStoreState {
@@ -102,6 +102,22 @@ export async function fileUpdateCrawlJobStatus(
   job.status = status;
   job.attempts += incrementAttempts ? 1 : 0;
   job.error_message = errorMessage ?? null;
+  job.updated_at = now();
+  await writeState(state);
+}
+
+export async function fileUpdateCrawlJobProgress(jobId: number, progress: CrawlProgress): Promise<void> {
+  const state = await readState();
+  const job = state.jobs.find((item) => item.id === jobId);
+
+  if (!job) {
+    return;
+  }
+
+  job.payload = {
+    ...job.payload,
+    progress,
+  };
   job.updated_at = now();
   await writeState(state);
 }

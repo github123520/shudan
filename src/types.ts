@@ -19,6 +19,21 @@ export interface CrawlBookJobPayload {
   maxPages?: number;
 }
 
+export interface CrawlProgress {
+  phase: "planning" | "crawling" | "completed";
+  currentPage: number;
+  targetPages: number;
+  sourceTotalPages: number;
+  totalBooklists: number;
+  crawledEntries: number;
+  updatedAt: string;
+}
+
+export interface CrawlBookOptions {
+  maxPages?: number;
+  onProgress?: (progress: CrawlProgress) => Promise<void> | void;
+}
+
 export interface BookSearchResult {
   bookId: string;
   title: string;

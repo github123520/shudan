@@ -134,6 +134,38 @@
         box-shadow: inset 0 0 0 1px #efaaaa;
       }
 
+      .progress-card {
+        display: grid;
+        gap: 7px;
+      }
+
+      .progress-track {
+        width: 100%;
+        height: 12px;
+        overflow: hidden;
+        background: #fff;
+        box-shadow: inset 0 0 0 1px var(--line);
+      }
+
+      .progress-fill {
+        width: 0%;
+        height: 100%;
+        background: var(--green);
+        transition: width 0.25s ease;
+      }
+
+      .progress-card.bad .progress-fill {
+        background: var(--red);
+      }
+
+      .progress-stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        align-items: center;
+        color: var(--muted);
+      }
+
       .search-bar,
       .task-bar {
         display: grid;
@@ -678,8 +710,46 @@
         return { label, color };
       }
 
+      function toPositiveNumber(value) {
+        const number = Number(value);
+        return Number.isFinite(number) && number > 0 ? number : 0;
+      }
+
+      function renderProgressBar(progressData) {
+        const targetPages = toPositiveNumber(progressData?.targetPages);
+        const sourceTotalPages = toPositiveNumber(progressData?.sourceTotalPages);
+        const currentPage = Math.min(toPositiveNumber(progressData?.currentPage), targetPages || Number.MAX_SAFE_INTEGER);
+        const crawledEntries = toPositiveNumber(progressData?.crawledEntries);
+        const totalBooklists = toPositiveNumber(progressData?.totalBooklists);
+        const percent = targetPages ? Math.max(0, Math.min(100, Math.round((currentPage / targetPages) * 100))) : 0;
+        const pageText = targetPages ? `${currentPage} / ${targetPages} 页` : "正在读取总页数";
+        const sourceText = sourceTotalPages && sourceTotalPages !== targetPages
+          ? `全量 ${sourceTotalPages} 页，本次 ${targetPages} 页`
+          : sourceTotalPages
+            ? `全量 ${sourceTotalPages} 页`
+            : "";
+        const entryText = crawledEntries
+          ? `已抓到 ${crawledEntries} 条评语`
+          : totalBooklists
+            ? `共约 ${totalBooklists} 条收录`
+            : "等待第一页结果";
+
+        return `
+          <div class="progress-track" aria-label="抓取进度">
+            <div class="progress-fill" style="width: ${percent}%"></div>
+          </div>
+          <div class="progress-stats">
+            <span class="about-path">${escapeHtml(pageText)}</span>
+            <span>${escapeHtml(percent)}%</span>
+            ${sourceText ? `<span>${escapeHtml(sourceText)}</span>` : ""}
+            <span>${escapeHtml(entryText)}</span>
+          </div>
+        `;
+      }
+
       function renderTaskProgress(job) {
         const { label, color } = jobStatusView(job);
+        const progressData = job.payload?.progress;
         const progress = document.getElementById("task-progress");
         progress.className = `progress-card ${job.status === "completed" ? "good" : job.status === "failed" ? "bad" : ""}`;
         progress.innerHTML = `
@@ -689,6 +759,7 @@
             ${job.target_id ? `书籍 ID <span class="about-path about-gap-before about-gap-after">${escapeHtml(job.target_id)}</span>` : ""}
             ${job.updated_at ? `更新时间：${escapeHtml(formatTime(job.updated_at))}` : ""}
           </div>
+          ${progressData ? renderProgressBar(progressData) : renderProgressBar(null)}
           ${job.error_message ? `<div class="about-line">${escapeHtml(job.error_message)}</div>` : ""}
         `;
       }
@@ -903,7 +974,10 @@
         setButtonBusy(button, true, "抓取中...");
         document.getElementById("task-progress").className = "progress-card";
         document.getElementById("task-progress").innerHTML = `
-          <span class="about-pill blue about-gap-after">已创建请求</span>正在提交抓取任务...
+          <div class="about-line">
+            <span class="about-pill blue about-gap-after">已创建请求</span>正在提交抓取任务...
+          </div>
+          ${renderProgressBar(null)}
         `;
         document.getElementById("book-details-result").innerHTML = '<div class="empty-panel grid-wide">任务正在后台抓取，完成后会自动展示结果。</div>';
 
@@ -914,9 +988,12 @@
             body: JSON.stringify(payload),
           });
           document.getElementById("task-progress").innerHTML = `
-            <span class="about-pill red about-gap-after">抓取中</span>
-            <span class="about-path about-gap-after">任务 #${escapeHtml(data.jobId)}</span>
-            后台正在处理，完成后自动提示。
+            <div class="about-line">
+              <span class="about-pill red about-gap-after">抓取中</span>
+              <span class="about-path about-gap-after">任务 #${escapeHtml(data.jobId)}</span>
+              正在读取这本书一共有多少页书单。
+            </div>
+            ${renderProgressBar(null)}
           `;
           startJobPolling(data.jobId, bookId);
         } catch (error) {

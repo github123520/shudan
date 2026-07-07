@@ -11,16 +11,18 @@ import {
   getBookEntries,
   getCrawlJob,
   upsertBookCrawlResult,
+  updateCrawlJobProgress,
   updateCrawlJobStatus,
   type IntersectionQuery,
 } from "../db/repositories.js";
-import type { BookCrawlResult } from "../types.js";
+import type { BookCrawlResult, CrawlProgress } from "../types.js";
 import {
   fileCreateCrawlJob,
   fileFindIntersectingBooklists,
   fileGetBookDetails,
   fileGetBookEntries,
   fileGetCrawlJob,
+  fileUpdateCrawlJobProgress,
   fileUpdateCrawlJobStatus,
   fileUpsertBookCrawlResult,
 } from "./file-store.js";
@@ -65,6 +67,15 @@ export async function storageUpdateCrawlJobStatus(
   }
 
   await fileUpdateCrawlJobStatus(jobId, status, incrementAttempts, errorMessage);
+}
+
+export async function storageUpdateCrawlJobProgress(jobId: number, progress: CrawlProgress): Promise<void> {
+  if (hasDatabaseConfig()) {
+    await updateCrawlJobProgress(getSql(), jobId, progress);
+    return;
+  }
+
+  await fileUpdateCrawlJobProgress(jobId, progress);
 }
 
 export async function storageGetCrawlJob(jobId: number) {
