@@ -167,7 +167,8 @@
       }
 
       .search-bar,
-      .task-bar {
+      .task-bar,
+      .co-bar {
         display: grid;
         gap: 6px;
         grid-template-columns: 88px minmax(0, 1fr) auto;
@@ -176,6 +177,10 @@
 
       .task-bar {
         grid-template-columns: 88px minmax(120px, 160px) auto minmax(0, 1fr);
+      }
+
+      .co-bar {
+        grid-template-columns: 88px minmax(0, 1fr) 96px minmax(100px, 140px) auto;
       }
 
       .field-label {
@@ -373,7 +378,8 @@
         }
 
         .search-bar,
-        .task-bar {
+        .task-bar,
+        .co-bar {
           grid-template-columns: 1fr;
         }
 
@@ -459,6 +465,27 @@
             </div>
           </section>
 
+          <section id="co-section" class="about-section">
+            <div class="about-section-head">
+              <span class="about-pill blue about-gap-after">共现书单</span>在当前书的书单里找同时包含其他小说的书单
+            </div>
+            <div class="about-section-body">
+              <div class="co-bar">
+                <div class="field-label">目标小说</div>
+                <input id="co-book-query" class="field-input" placeholder="输入 B 小说名；多本用逗号或换行分隔" autocomplete="off" />
+                <div class="field-label">补抓页数</div>
+                <input id="co-max-pages" class="field-input" placeholder="清空抓全量" />
+                <button id="co-search-btn" class="btn blue" type="button">找共现书单</button>
+              </div>
+              <div id="co-status" class="progress-card">
+                <span class="about-pill dark about-gap-after">等待输入</span>先抓完 A 小说的书单，再输入 B 小说名。若 B 没抓过，系统会先补抓 B，再做本地交集。
+              </div>
+              <div id="co-results" class="booklist-grid" aria-live="polite">
+                <div class="empty-panel grid-wide">共现结果会显示在这里。A 和 B 都抓过后，后续查询不需要重新抓取。</div>
+              </div>
+            </div>
+          </section>
+
           <section id="booklist-section" class="about-section">
             <div class="about-section-head">
               <span class="about-pill blue about-gap-after">书单结果</span>完成后自动加载并跳到这里
@@ -477,6 +504,7 @@
 
     <script>
       const state = {
+        coPollingTimer: null,
         details: { book: null, bookId: "", entries: [], page: 0, pageSize: 20, total: 0 },
         jumpTimer: null,
         pollingTimer: null,
@@ -533,6 +561,54 @@
         const el = document.getElementById(id);
         el.className = tone ? `status-line ${tone}` : "status-line";
         el.textContent = message;
+      }
+
+      function parseCnMetric(value) {
+        const text = String(value || "").replaceAll(",", "").replaceAll("，", "").trim();
+        const match = text.match(/[\d.]+/);
+        if (!match) return 0;
+
+        let number = Number(match[0]);
+        if (!Number.isFinite(number)) return 0;
+        if (text.includes("亿")) number *= 100000000;
+        if (text.includes("万")) number *= 10000;
+        if (text.includes("千")) number *= 1000;
+        return number;
+      }
+
+      function rankBooks(items) {
+        const rows = items.map((book) => ({
+          book,
+          word: parseCnMetric(book.wordCountText),
+          favorite: parseCnMetric(book.favoriteCountText),
+          recommendation: parseCnMetric(book.recommendationCountText),
+        }));
+
+        const maxWord = Math.max(...rows.map((item) => item.word), 1);
+        const maxFavorite = Math.max(...rows.map((item) => item.favorite), 1);
+        const maxRecommendation = Math.max(...rows.map((item) => item.recommendation), 1);
+
+        return rows
+          .map((item) => ({
+            ...item.book,
+            autoScore:
+              (item.favorite / maxFavorite) * 4 +
+              (item.recommendation / maxRecommendation) * 3 +
+              (item.word / maxWord) * 2,
+            autoMetrics: item,
+          }))
+          .sort((a, b) => b.autoScore - a.autoScore);
+      }
+
+      function bestBook(items) {
+        return rankBooks(items)[0] || null;
+      }
+
+      function splitBookQueries(value) {
+        return String(value || "")
+          .split(/[\n,，、;；]+/)
+          .map((item) => item.trim())
+          .filter(Boolean);
       }
 
       function setButtonBusy(button, busy, label) {
@@ -623,7 +699,7 @@
         `;
       }
 
-      function applyBook(book, button) {
+      function applyBook(book, button, options = {}) {
         state.selectedBook = book;
         document.getElementById("job-book-id").value = String(book.bookId);
         document.getElementById("job-create-btn").disabled = false;
@@ -635,8 +711,10 @@
         });
 
         state.selectedButton = button;
-        button.classList.add("is-selected");
-        button.textContent = "已选中";
+        if (button) {
+          button.classList.add("is-selected");
+          button.textContent = "已选中";
+        }
 
         const progress = document.getElementById("task-progress");
         progress.className = "progress-card good";
@@ -644,7 +722,9 @@
           <span class="about-pill green about-gap-after">已选择</span>
           可以为《${escapeHtml(book.title)}》创建抓取任务。
         `;
-        document.getElementById("task-section").scrollIntoView({ behavior: "smooth", block: "nearest" });
+        if (options.scroll !== false) {
+          document.getElementById("task-section").scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
       }
 
       function renderSearchCards(items) {
@@ -675,15 +755,17 @@
               book.recommendationCountText ? `推荐 ${book.recommendationCountText}` : "",
             ].filter(Boolean).join(" | "),
           ].filter(Boolean);
+          const isSelected = state.selectedBook?.bookId === book.bookId;
 
           card.innerHTML = `
             ${cover}
             <div>
               <div class="tile-title">${escapeHtml(book.title)}</div>
+              ${isSelected ? '<div class="about-line"><span class="about-pill green">自动选中</span></div>' : ""}
               <div class="tile-meta">${metaLines.map(escapeHtml).join("<br>")}</div>
             </div>
             <div class="tile-actions">
-              <button class="btn use-book-btn" type="button">用这本</button>
+              <button class="btn use-book-btn${isSelected ? " is-selected" : ""}" type="button" data-book-id="${escapeHtml(book.bookId)}">${isSelected ? "已选中" : "用这本"}</button>
               <button class="btn secondary" type="button" data-open-url="${escapeHtml(book.bookUrl)}">原页</button>
             </div>
           `;
@@ -872,6 +954,227 @@
         renderBookDetails();
       }
 
+      async function createCrawlJob(bookId, maxPagesRaw) {
+        const payload = { bookId };
+        if (String(maxPagesRaw || "").trim()) {
+          payload.maxPages = Number(maxPagesRaw);
+        }
+
+        return requestJson("/jobs/crawl-book", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      async function getCachedBook(bookId) {
+        const response = await fetch(`/books/${bookId}?page=1`);
+        const text = await response.text();
+        let data;
+        try { data = text ? JSON.parse(text) : {}; } catch { data = { message: text }; }
+        if (response.status === 404) return null;
+        if (!response.ok) throw new Error(JSON.stringify(data));
+        return data;
+      }
+
+      function setCoStatus(html, tone = "") {
+        const box = document.getElementById("co-status");
+        box.className = tone ? `progress-card ${tone}` : "progress-card";
+        box.innerHTML = html;
+      }
+
+      function stopCoPolling() {
+        if (state.coPollingTimer) {
+          clearInterval(state.coPollingTimer);
+          state.coPollingTimer = null;
+        }
+      }
+
+      function waitForCrawlJob(jobId, book) {
+        stopCoPolling();
+
+        return new Promise((resolve, reject) => {
+          const poll = async () => {
+            try {
+              const job = await requestJson(`/jobs/${jobId}`);
+              const { label, color } = jobStatusView(job);
+              setCoStatus(`
+                <div class="about-line">
+                  <span class="about-pill ${color} about-gap-after">${escapeHtml(label)}</span>
+                  正在补抓《${escapeHtml(book.title)}》
+                  <span class="about-path about-gap-before">任务 #${escapeHtml(jobId)}</span>
+                </div>
+                ${renderProgressBar(job.payload?.progress)}
+              `, job.status === "failed" ? "bad" : "");
+
+              if (job.status === "completed") {
+                stopCoPolling();
+                resolve(job);
+              }
+
+              if (job.status === "failed") {
+                stopCoPolling();
+                reject(new Error(job.error_message || "补抓任务失败"));
+              }
+            } catch (error) {
+              stopCoPolling();
+              reject(error);
+            }
+          };
+
+          void poll();
+          state.coPollingTimer = setInterval(poll, 3000);
+        });
+      }
+
+      async function searchBestBookByTitle(query) {
+        const data = await requestJson(`/search/books?q=${encodeURIComponent(query)}`);
+        const book = bestBook(data.results || []);
+        if (!book) {
+          throw new Error(`没有找到《${query}》`);
+        }
+        return book;
+      }
+
+      async function ensureTargetBookCached(book, maxPagesRaw) {
+        const cached = await getCachedBook(book.bookId);
+        if (cached) return cached;
+
+        setCoStatus(`
+          <div class="about-line">
+            <span class="about-pill blue about-gap-after">未缓存</span>
+            《${escapeHtml(book.title)}》还没抓过，正在先补抓它的书单。
+          </div>
+          ${renderProgressBar(null)}
+        `);
+        const job = await createCrawlJob(book.bookId, maxPagesRaw);
+        await waitForCrawlJob(job.jobId, book);
+        return getCachedBook(book.bookId);
+      }
+
+      function renderCoResults(rows, sourceBook, targetBooks) {
+        const root = document.getElementById("co-results");
+        root.innerHTML = "";
+
+        if (!rows.length) {
+          root.innerHTML = `
+            <div class="empty-panel grid-wide">
+              没有找到共同书单。若目标书只补抓了部分页，结果可能不完整；清空“补抓页数”抓全量后会更准。
+            </div>
+          `;
+          return;
+        }
+
+        const summary = document.createElement("div");
+        summary.className = "booklist-tile";
+        summary.innerHTML = `
+          <div class="booklist-head">
+            <span class="about-pill green">共现结果</span>
+            <span class="about-path">${escapeHtml(sourceBook.title || sourceBook.id)}</span>
+            ${targetBooks.map((book) => `<span class="about-path">${escapeHtml(book.title)}</span>`).join("")}
+            <span class="about-pill blue">${escapeHtml(rows.length)} 个书单</span>
+          </div>
+          <div class="tile-meta">这些结果来自本地已保存的抓取数据；A 和目标书都缓存后，再查不需要重新抓取。</div>
+        `;
+        root.appendChild(summary);
+
+        rows.forEach((row, index) => {
+          const card = document.createElement("article");
+          card.className = "booklist-tile";
+          card.innerHTML = `
+            <div class="booklist-head">
+              <span class="about-pill blue">#${index + 1}</span>
+              <span class="about-path">${escapeHtml(row.booklistTitle || "未知书单")}</span>
+              ${row.booklistFollowerCount !== null && row.booklistFollowerCount !== undefined ? `<span class="about-pill green">${escapeHtml(row.booklistFollowerCount)} 关注</span>` : ""}
+              ${row.booklistBookCount !== null && row.booklistBookCount !== undefined ? `<span class="about-pill dark">${escapeHtml(row.booklistBookCount)} 本书</span>` : ""}
+            </div>
+            <div class="tile-meta">
+              命中 ${escapeHtml(row.matchedBooks || row.matchedBookIds?.length || "")} 本：${escapeHtml((row.matchedBookIds || []).join(" / "))}
+            </div>
+            <div class="tile-actions">
+              ${row.booklistUrl ? `<button class="btn secondary" type="button" data-open-url="${escapeHtml(row.booklistUrl)}">打开书单</button>` : ""}
+            </div>
+          `;
+          root.appendChild(card);
+        });
+
+        root.querySelectorAll("[data-open-url]").forEach((button) => {
+          button.addEventListener("click", () => window.open(button.dataset.openUrl, "_blank"));
+        });
+      }
+
+      async function runCoSearch() {
+        const sourceBookId = state.details.bookId || state.selectedBook?.bookId || document.getElementById("job-book-id").value.trim();
+        const queryText = document.getElementById("co-book-query").value;
+        const targetQueries = splitBookQueries(queryText);
+        const maxPagesRaw = document.getElementById("co-max-pages").value.trim();
+
+        document.getElementById("co-results").innerHTML = '<div class="empty-panel grid-wide">正在准备共现查询...</div>';
+
+        if (!sourceBookId) {
+          throw new Error("先搜索并选中 A 小说，再抓取 A 的书单。");
+        }
+
+        if (!targetQueries.length) {
+          throw new Error("请输入 B 小说名；多本可以用逗号或换行分隔。");
+        }
+
+        setCoStatus(`
+          <div class="about-line">
+            <span class="about-pill blue about-gap-after">检查 A</span>
+            正在确认基准书是否已经抓取。
+          </div>
+        `);
+        const sourceData = await getCachedBook(sourceBookId);
+        if (!sourceData) {
+          throw new Error("A 小说还没有缓存书单。请先抓取 A，完成后再查共现。");
+        }
+
+        const targetBooks = [];
+        for (const query of targetQueries) {
+          setCoStatus(`
+            <div class="about-line">
+              <span class="about-pill blue about-gap-after">搜索目标</span>
+              正在搜索《${escapeHtml(query)}》并自动选择综合最高的结果。
+            </div>
+          `);
+          const book = await searchBestBookByTitle(query);
+          if (String(book.bookId) !== String(sourceBookId) && !targetBooks.some((item) => item.bookId === book.bookId)) {
+            targetBooks.push(book);
+          }
+        }
+
+        if (!targetBooks.length) {
+          throw new Error("目标小说和 A 是同一本，无法做共现查询。");
+        }
+
+        for (const book of targetBooks) {
+          await ensureTargetBookCached(book, maxPagesRaw);
+        }
+
+        const bookIds = [String(sourceBookId), ...targetBooks.map((book) => String(book.bookId))];
+        setCoStatus(`
+          <div class="about-line">
+            <span class="about-pill green about-gap-after">本地计算</span>
+            正在查 ${bookIds.length} 本书同时出现的书单。
+          </div>
+          ${maxPagesRaw ? `<div class="about-line">目标书按前 ${escapeHtml(maxPagesRaw)} 页补抓，结果可能不是全量。</div>` : ""}
+        `, "good");
+
+        const data = await requestJson("/search/booklists/intersection", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ bookIds, limit: 100 }),
+        });
+        renderCoResults(data.results || [], sourceData.book || { id: sourceBookId }, targetBooks);
+        setCoStatus(`
+          <div class="about-line">
+            <span class="about-pill green about-gap-after">完成</span>
+            找到 ${escapeHtml((data.results || []).length)} 个共同书单。A 和目标书都已缓存，后续可直接重复查询。
+          </div>
+        `, "good");
+      }
+
       function stopJobPolling() {
         if (state.pollingTimer) {
           clearInterval(state.pollingTimer);
@@ -939,8 +1242,18 @@
 
         try {
           const data = await requestJson(`/search/books?q=${encodeURIComponent(query)}`);
-          const results = data.results || [];
-          setNotice("search-book-result", `找到 ${data.total} 本相关小说，已在下面铺成网格。`, results.length ? "good" : "");
+          const results = rankBooks(data.results || []);
+          const autoBook = results[0] || null;
+          if (autoBook) {
+            applyBook(autoBook, null, { scroll: false });
+          }
+          setNotice(
+            "search-book-result",
+            autoBook
+              ? `找到 ${data.total} 本相关小说，已自动选中综合最高的《${autoBook.title}》。`
+              : `找到 ${data.total} 本相关小说。`,
+            results.length ? "good" : "",
+          );
           renderSearchCards(results);
         } catch (error) {
           setNotice("search-book-result", humanError(error), "bad");
@@ -1001,6 +1314,30 @@
           const progress = document.getElementById("task-progress");
           progress.className = "progress-card bad";
           progress.textContent = humanError(error);
+        }
+      });
+
+      document.getElementById("co-search-btn").addEventListener("click", async () => {
+        const button = document.getElementById("co-search-btn");
+        stopCoPolling();
+        setButtonBusy(button, true, "查询中...");
+        try {
+          await runCoSearch();
+        } catch (error) {
+          setCoStatus(`
+            <div class="about-line">
+              <span class="about-pill red about-gap-after">失败</span>${escapeHtml(humanError(error))}
+            </div>
+          `, "bad");
+          document.getElementById("co-results").innerHTML = '<div class="empty-panel grid-wide">共现查询没有完成。</div>';
+        } finally {
+          setButtonBusy(button, false);
+        }
+      });
+
+      document.getElementById("co-book-query").addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+          document.getElementById("co-search-btn").click();
         }
       });
 

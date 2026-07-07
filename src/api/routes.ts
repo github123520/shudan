@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { config } from "../config.js";
 import { inspectBookPlan, searchBooksByTitle } from "../crawler/qidiantu.js";
+import type { BookSearchResult } from "../types.js";
 import {
   getStorageStatus,
   storageCreateCrawlJob,
@@ -22,6 +23,46 @@ const intersectionSchema = z.object({
   bookIds: z.array(z.string().regex(/^\d+$/)).min(2).max(10),
   limit: z.number().int().positive().max(100).default(20),
 });
+
+function parseMetric(value: string | null): number {
+  const text = String(value ?? "").replaceAll(",", "").replaceAll("，", "").trim();
+  const match = text.match(/[\d.]+/);
+  if (!match) {
+    return 0;
+  }
+
+  let number = Number(match[0]);
+  if (!Number.isFinite(number)) {
+    return 0;
+  }
+
+  if (text.includes("亿")) number *= 100000000;
+  if (text.includes("万")) number *= 10000;
+  if (text.includes("千")) number *= 1000;
+  return number;
+}
+
+function rankBookSearchResults(results: BookSearchResult[]): Array<BookSearchResult & { autoScore: number }> {
+  const rows = results.map((book) => ({
+    book,
+    word: parseMetric(book.wordCountText),
+    favorite: parseMetric(book.favoriteCountText),
+    recommendation: parseMetric(book.recommendationCountText),
+  }));
+  const maxWord = Math.max(...rows.map((item) => item.word), 1);
+  const maxFavorite = Math.max(...rows.map((item) => item.favorite), 1);
+  const maxRecommendation = Math.max(...rows.map((item) => item.recommendation), 1);
+
+  return rows
+    .map((item) => ({
+      ...item.book,
+      autoScore:
+        (item.favorite / maxFavorite) * 4 +
+        (item.recommendation / maxRecommendation) * 3 +
+        (item.word / maxWord) * 2,
+    }))
+    .sort((a, b) => b.autoScore - a.autoScore);
+}
 
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
   app.get("/api", async () => ({
@@ -50,11 +91,12 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
       return reply.code(400).send({ error: "Query must be at least 2 characters" });
     }
 
-    const results = await searchBooksByTitle(query, config);
+    const results = rankBookSearchResults(await searchBooksByTitle(query, config));
 
     return {
       query,
       total: results.length,
+      best: results[0] ?? null,
       results,
     };
   });
