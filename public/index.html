@@ -17,7 +17,6 @@
         --green: #44bb73;
         --dark: #555;
         --ink: #2f3b4a;
-        --soft-blue: #f0f7ff;
         --soft-green: #edf8f1;
         --soft-red: #fff1f1;
         --soft-warn: #fff3df;
@@ -38,7 +37,8 @@
       }
 
       button,
-      input {
+      input,
+      textarea {
         font: inherit;
       }
 
@@ -47,9 +47,13 @@
         margin: 10px auto 28px;
       }
 
-      .about-panel {
+      .about-panel,
+      .about-section {
         border: 1px solid var(--line);
         background: var(--panel);
+      }
+
+      .about-panel {
         box-shadow: var(--shadow);
       }
 
@@ -67,16 +71,6 @@
         padding: 10px;
         display: grid;
         gap: 10px;
-      }
-
-      .about-doc {
-        display: grid;
-        gap: 10px;
-      }
-
-      .about-section {
-        background: var(--panel);
-        box-shadow: inset 0 0 0 1px var(--line);
       }
 
       .about-section-body {
@@ -111,90 +105,16 @@
 
       .about-gap-before { margin-left: 2px; }
       .about-gap-after { margin-right: 2px; }
-      .about-gap-tight-after { margin-right: 1px; }
 
-      .status-line,
-      .selected-book,
-      .progress-card {
-        padding: 8px;
-        background: var(--soft-warn);
-        box-shadow: inset 0 0 0 1px #f0c87b;
-      }
-
-      .status-line.good,
-      .selected-book.ready,
-      .progress-card.good {
-        background: var(--soft-green);
-        box-shadow: inset 0 0 0 1px #9bd4ae;
-      }
-
-      .status-line.bad,
-      .progress-card.bad {
-        background: var(--soft-red);
-        box-shadow: inset 0 0 0 1px #efaaaa;
-      }
-
-      .progress-card {
-        display: grid;
-        gap: 7px;
-      }
-
-      .progress-track {
-        width: 100%;
-        height: 12px;
-        overflow: hidden;
-        background: #fff;
-        box-shadow: inset 0 0 0 1px var(--line);
-      }
-
-      .progress-fill {
-        width: 0%;
-        height: 100%;
-        background: var(--green);
-        transition: width 0.25s ease;
-      }
-
-      .progress-card.bad .progress-fill {
-        background: var(--red);
-      }
-
-      .progress-stats {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 5px;
-        align-items: center;
-        color: var(--muted);
-      }
-
-      .search-bar,
-      .task-bar,
-      .co-bar {
+      .topbar {
         display: grid;
         gap: 6px;
-        grid-template-columns: 88px minmax(0, 1fr) auto;
+        grid-template-columns: minmax(160px, 1fr) 112px auto auto auto;
         align-items: stretch;
       }
 
-      .task-bar {
-        grid-template-columns: 88px minmax(120px, 160px) auto minmax(0, 1fr);
-      }
-
-      .co-bar {
-        grid-template-columns: 88px minmax(0, 1fr) 96px minmax(100px, 140px) auto;
-      }
-
-      .field-label {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: 1px solid var(--line);
-        background: var(--head);
-        padding: 0 8px;
-        min-height: 34px;
-        white-space: nowrap;
-      }
-
-      .field-input {
+      .field-input,
+      .field-textarea {
         width: 100%;
         border: 1px solid var(--line);
         background: #fff;
@@ -205,13 +125,7 @@
       }
 
       .field-textarea {
-        width: 100%;
         min-height: 76px;
-        border: 1px solid var(--line);
-        background: #fff;
-        color: var(--text);
-        padding: 8px 10px;
-        outline: none;
         resize: vertical;
       }
 
@@ -238,127 +152,143 @@
       .btn.blue { background: var(--blue); }
       .btn.green { background: var(--green); }
       .btn.red { background: var(--red); }
-      .btn.is-selected { background: var(--green); }
-      .btn.is-busy { background: var(--dark); }
       .btn:disabled {
         opacity: 0.55;
         cursor: not-allowed;
       }
 
-      .hint-text {
-        color: var(--muted);
-      }
-
-      .catalog-grid,
-      .booklist-grid {
+      .workspace {
         display: grid;
         gap: 10px;
-        align-items: stretch;
+        grid-template-columns: 380px minmax(0, 1fr);
+        align-items: start;
       }
 
-      .catalog-grid {
-        grid-template-columns: repeat(auto-fill, minmax(154px, 1fr));
+      .left-stack,
+      .right-stack {
+        display: grid;
+        gap: 10px;
       }
 
-      .booklist-grid {
-        grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      .compare-box {
+        display: grid;
+        gap: 8px;
       }
 
-      .book-tile,
-      .booklist-tile,
-      .library-tile,
-      .load-more-card {
+      .drop-slot {
+        min-height: 88px;
+        border: 1px dashed #9aa4b2;
+        background: #fbfcfd;
+        padding: 8px;
+        display: grid;
+        gap: 6px;
+        align-content: center;
+      }
+
+      .drop-slot.over {
+        border-color: var(--blue);
+        background: #f0f7ff;
+      }
+
+      .drop-slot.filled {
+        border-style: solid;
+        border-color: #9bd4ae;
+        background: var(--soft-green);
+      }
+
+      .library-list,
+      .job-list,
+      .result-list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .library-list {
+        grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      }
+
+      .library-card,
+      .job-card,
+      .result-card {
         background: #fff;
         box-shadow: inset 0 0 0 1px var(--line);
         padding: 8px;
-      }
-
-      .book-tile {
         display: grid;
-        grid-template-rows: auto 1fr auto;
-        gap: 8px;
-        min-height: 258px;
+        gap: 7px;
       }
 
-      .book-cover,
-      .book-cover-placeholder {
-        width: 100%;
-        aspect-ratio: 3 / 4;
-        background: var(--head);
-        object-fit: cover;
-        box-shadow: inset 0 0 0 1px var(--line);
+      .library-card {
+        cursor: grab;
       }
 
-      .book-cover-placeholder {
-        display: grid;
-        place-items: center;
-        padding: 10px;
-        color: var(--muted);
-        text-align: center;
-        overflow: hidden;
+      .library-card:active {
+        cursor: grabbing;
       }
 
-      .booklist-tile {
-        display: grid;
-        grid-template-rows: auto 1fr auto;
-        gap: 8px;
-        min-height: 210px;
-      }
-
-      .library-tile {
-        display: grid;
-        gap: 8px;
-        min-height: 154px;
-      }
-
-      .tile-title {
-        font-size: 12px;
-        font-weight: 700;
-        line-height: 1.5;
-        word-break: break-word;
-      }
-
-      .tile-meta {
-        color: var(--muted);
-        line-height: 1.65;
-        word-break: break-word;
-      }
-
-      .tile-actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        align-self: end;
-      }
-
-      .booklist-head {
+      .card-head {
         display: flex;
         flex-wrap: wrap;
         gap: 5px;
         align-items: center;
       }
 
-      .booklist-comment {
-        display: grid;
-        gap: 5px;
-        max-height: 230px;
-        overflow: auto;
-        color: var(--text);
-      }
-
-      .booklist-comment p {
-        margin: 0;
-        line-height: 1.7;
+      .card-title {
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 1.5;
         word-break: break-word;
       }
 
-      .grid-wide {
-        grid-column: 1 / -1;
+      .muted {
+        color: var(--muted);
       }
 
-      .empty-panel,
-      .load-more-card {
-        min-height: 180px;
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .status-line {
+        padding: 8px;
+        background: var(--soft-warn);
+        box-shadow: inset 0 0 0 1px #f0c87b;
+      }
+
+      .status-line.good {
+        background: var(--soft-green);
+        box-shadow: inset 0 0 0 1px #9bd4ae;
+      }
+
+      .status-line.bad {
+        background: var(--soft-red);
+        box-shadow: inset 0 0 0 1px #efaaaa;
+      }
+
+      .progress-track {
+        width: 100%;
+        height: 12px;
+        overflow: hidden;
+        background: #fff;
+        box-shadow: inset 0 0 0 1px var(--line);
+      }
+
+      .progress-fill {
+        width: 0%;
+        height: 100%;
+        background: var(--green);
+        transition: width 0.25s ease;
+      }
+
+      .progress-stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        color: var(--muted);
+      }
+
+      .empty-panel {
+        min-height: 126px;
         display: grid;
         place-items: center;
         color: var(--muted);
@@ -368,8 +298,18 @@
         padding: 20px;
       }
 
-      .load-more-card {
-        gap: 8px;
+      .batch-row {
+        display: grid;
+        gap: 6px;
+        grid-template-columns: minmax(0, 1fr) 100px auto;
+      }
+
+      .output-head {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+        justify-content: space-between;
       }
 
       .toast {
@@ -390,33 +330,11 @@
         gap: 6px;
       }
 
-      @media (max-width: 760px) {
-        .app-shell {
-          width: min(100vw - 12px, 1280px);
-          margin-top: 6px;
-        }
-
-        .search-bar,
-        .task-bar,
-        .co-bar {
+      @media (max-width: 900px) {
+        .topbar,
+        .workspace,
+        .batch-row {
           grid-template-columns: 1fr;
-        }
-
-        .field-label {
-          justify-content: flex-start;
-          min-height: 28px;
-        }
-
-        .catalog-grid {
-          grid-template-columns: repeat(auto-fill, minmax(136px, 1fr));
-        }
-
-        .booklist-grid {
-          grid-template-columns: 1fr;
-        }
-
-        .book-tile {
-          min-height: 236px;
         }
       }
     </style>
@@ -424,132 +342,90 @@
   <body>
     <main class="app-shell">
       <section class="about-panel">
-        <div class="about-panel-head">书单情报台</div>
+        <div class="about-panel-head">
+          书单情报台
+          <span id="storage-badge" class="about-pill dark about-gap-before">检查中</span>
+        </div>
         <div class="about-panel-body">
           <section class="about-section">
             <div class="about-section-head">
-              <span class="about-pill blue about-gap-after">状态</span>服务与存储
+              <span class="about-pill blue about-gap-after">抓取</span>搜到后自动取综合最高的小说
             </div>
             <div class="about-section-body">
-              <div id="service-status" class="status-line">正在检查服务状态...</div>
-            </div>
-          </section>
-
-          <section class="about-section">
-            <div class="about-section-head">
-              <span class="about-pill blue about-gap-after">搜索小说</span>输入书名，下面直接铺开结果
-            </div>
-            <div class="about-section-body">
-              <div class="search-bar">
-                <div class="field-label">小说名字</div>
-                <input id="search-book-query" class="field-input" value="我真没想重生啊" autocomplete="off" />
-                <button id="search-book-btn" class="btn blue" type="button">搜索</button>
+              <div class="topbar">
+                <input id="search-query" class="field-input" value="我真没想重生啊" autocomplete="off" />
+                <input id="single-max-pages" class="field-input" value="2" placeholder="页数" />
+                <button id="single-crawl-btn" class="btn green" type="button">搜书并抓取</button>
+                <button id="library-refresh-btn" class="btn secondary" type="button">刷新本地书单</button>
+                <button id="clear-compare-btn" class="btn secondary" type="button">清空对比</button>
               </div>
-              <div id="search-book-result" class="status-line">搜索后会在下方用多列网格展示小说，不需要手填书籍 ID。</div>
+              <div id="top-status" class="status-line">就绪。</div>
             </div>
           </section>
 
-          <section id="task-section" class="about-section">
-            <div class="about-section-head">
-              <span class="about-pill red about-gap-after">抓取书单</span>选中小说后创建任务
-            </div>
-            <div class="about-section-body">
-              <input id="job-book-id" type="hidden" />
-              <div id="selected-book" class="selected-book">
-                <div class="about-line">
-                  <span class="about-pill dark about-gap-after">未选择</span>先在小说结果里点
-                  <span class="about-path about-gap-before about-gap-after">用这本</span>，这里会显示当前选择。
+          <div class="workspace">
+            <div class="left-stack">
+              <section class="about-section">
+                <div class="about-section-head">
+                  <span class="about-pill green about-gap-after">本地书单</span>拖到下面两个槽里
                 </div>
-              </div>
-              <div class="task-bar">
-                <div class="field-label">最大页数</div>
-                <input id="job-max-pages" class="field-input" value="2" placeholder="清空则抓全量" />
-                <button id="job-create-btn" class="btn green" type="button" disabled>创建抓取任务</button>
-                <div class="hint-text">建议先用 2 页试跑；确认效果后再清空页数抓全量。</div>
-              </div>
-              <div id="task-progress" class="progress-card">
-                <span class="about-pill dark about-gap-after">暂无任务</span>创建后会自动轮询，完成时右下角提示，并在 3 秒后跳到书单结果。
-              </div>
-            </div>
-          </section>
+                <div class="about-section-body">
+                  <div id="library-list" class="library-list">
+                    <div class="empty-panel">正在读取本地书单。</div>
+                  </div>
+                </div>
+              </section>
 
-          <section id="library-section" class="about-section">
-            <div class="about-section-head">
-              <span class="about-pill green about-gap-after">本地书库</span>已经抓过的小说可以随时调取
-            </div>
-            <div class="about-section-body">
-              <div class="about-line">
-                <button id="library-refresh-btn" class="btn secondary" type="button">刷新本地书库</button>
-                <span class="hint-text about-gap-before">这里显示服务器已经保存的书单缓存。只要缓存不丢，后续功能都优先用本地数据。</span>
-              </div>
-              <div id="library-status" class="status-line">正在读取本地书库...</div>
-              <div id="library-books" class="catalog-grid" aria-live="polite">
-                <div class="empty-panel grid-wide">还没有读取到本地书库。</div>
-              </div>
-            </div>
-          </section>
+              <section class="about-section">
+                <div class="about-section-head">
+                  <span class="about-pill blue about-gap-after">对比框</span>放入两本小说
+                </div>
+                <div class="about-section-body compare-box">
+                  <div id="slot-0" class="drop-slot" data-slot="0">拖入第 1 本本地书单</div>
+                  <div id="slot-1" class="drop-slot" data-slot="1">拖入第 2 本本地书单</div>
+                  <button id="compare-btn" class="btn blue" type="button" disabled>列出重合书单</button>
+                </div>
+              </section>
 
-          <section id="batch-section" class="about-section">
-            <div class="about-section-head">
-              <span class="about-pill red about-gap-after">批量抓取</span>多部小说分别抓取，分别显示进度
-            </div>
-            <div class="about-section-body">
-              <div class="co-bar">
-                <div class="field-label">小说名单</div>
-                <textarea id="batch-book-queries" class="field-textarea" placeholder="每行一本，或用逗号分隔。例如：&#10;我真没想重生啊&#10;大王饶命"></textarea>
-                <div class="field-label">最大页数</div>
-                <input id="batch-max-pages" class="field-input" value="2" placeholder="清空抓全量" />
-                <button id="batch-crawl-btn" class="btn green" type="button">批量抓取</button>
-              </div>
-              <div id="batch-status" class="status-line">批量抓取会自动按书名搜索正主，然后为每本书创建独立任务。</div>
-              <div id="job-progress-list" class="booklist-grid" aria-live="polite">
-                <div class="empty-panel grid-wide">任务创建后，每本书的进度条会显示在这里。</div>
-              </div>
-            </div>
-          </section>
+              <section class="about-section">
+                <div class="about-section-head">
+                  <span class="about-pill red about-gap-after">批量</span>多本分别抓取
+                </div>
+                <div class="about-section-body">
+                  <div class="batch-row">
+                    <textarea id="batch-queries" class="field-textarea" placeholder="每行一本，或用逗号分隔"></textarea>
+                    <input id="batch-max-pages" class="field-input" value="2" placeholder="页数" />
+                    <button id="batch-crawl-btn" class="btn green" type="button">批量抓取</button>
+                  </div>
+                </div>
+              </section>
 
-          <section class="about-section">
-            <div class="about-section-head">
-              <span class="about-pill green about-gap-after">小说搜索结果</span>九宫格 / 4x4 / 更多列自动适配
+              <section class="about-section">
+                <div class="about-section-head">
+                  <span class="about-pill red about-gap-after">任务</span>独立进度
+                </div>
+                <div class="about-section-body">
+                  <div id="job-list" class="job-list">
+                    <div class="empty-panel">暂无任务。</div>
+                  </div>
+                </div>
+              </section>
             </div>
-            <div class="about-section-body">
-              <div id="search-book-cards" class="catalog-grid" aria-live="polite">
-                <div class="empty-panel grid-wide">搜索后，这里会用网格展示搜到的小说。</div>
-              </div>
-            </div>
-          </section>
 
-          <section id="co-section" class="about-section">
-            <div class="about-section-head">
-              <span class="about-pill blue about-gap-after">共现书单</span>在当前书的书单里找同时包含其他小说的书单
+            <div class="right-stack">
+              <section class="about-section">
+                <div class="about-section-head">
+                  <span class="about-pill blue about-gap-after">重合书单</span>右侧结果
+                </div>
+                <div class="about-section-body">
+                  <div id="output-status" class="status-line">把两本本地书单拖到左侧对比框。</div>
+                  <div id="output-list" class="result-list">
+                    <div class="empty-panel">等待对比。</div>
+                  </div>
+                </div>
+              </section>
             </div>
-            <div class="about-section-body">
-              <div class="co-bar">
-                <div class="field-label">目标小说</div>
-                <input id="co-book-query" class="field-input" placeholder="输入 B 小说名；多本用逗号或换行分隔" autocomplete="off" />
-                <div class="field-label">补抓页数</div>
-                <input id="co-max-pages" class="field-input" placeholder="清空抓全量" />
-                <button id="co-search-btn" class="btn blue" type="button">找共现书单</button>
-              </div>
-              <div id="co-status" class="progress-card">
-                <span class="about-pill dark about-gap-after">等待输入</span>先抓完 A 小说的书单，再输入 B 小说名。若 B 没抓过，系统会先补抓 B，再做本地交集。
-              </div>
-              <div id="co-results" class="booklist-grid" aria-live="polite">
-                <div class="empty-panel grid-wide">共现结果会显示在这里。A 和 B 都抓过后，后续查询不需要重新抓取。</div>
-              </div>
-            </div>
-          </section>
-
-          <section id="booklist-section" class="about-section">
-            <div class="about-section-head">
-              <span class="about-pill blue about-gap-after">书单结果</span>完成后自动加载并跳到这里
-            </div>
-            <div class="about-section-body">
-              <div id="book-details-result" class="booklist-grid" aria-live="polite">
-                <div class="empty-panel grid-wide">抓取完成后，这里会用网格展示书单和评语，不再显示原始 JSON。</div>
-              </div>
-            </div>
-          </section>
+          </div>
         </div>
       </section>
     </main>
@@ -558,16 +434,10 @@
 
     <script>
       const state = {
-        activeJobs: new Map(),
-        coPollingTimer: null,
-        details: { book: null, bookId: "", entries: [], page: 0, pageSize: 20, total: 0 },
+        books: [],
+        compare: [null, null],
+        details: { bookId: "", entries: [], page: 0, total: 0, book: null },
         jobTimers: new Map(),
-        jumpTimer: null,
-        libraryBooks: [],
-        pollingTimer: null,
-        selectedBook: null,
-        selectedButton: null,
-        storageDriver: "file",
       };
 
       function escapeHtml(value) {
@@ -589,14 +459,6 @@
           .filter(Boolean);
       }
 
-      function normalizeAssetUrl(url) {
-        const value = String(url || "").trim();
-        if (!value) return "";
-        if (value.startsWith("//")) return `https:${value}`;
-        if (value.startsWith("/")) return `https://www.qidiantu.com${value}`;
-        return value;
-      }
-
       function formatTime(value) {
         if (!value) return "";
         const date = new Date(value);
@@ -614,17 +476,48 @@
         }
       }
 
-      function setNotice(id, message, tone = "") {
+      async function requestJson(url, options) {
+        const response = await fetch(url, options);
+        const text = await response.text();
+        let data;
+        try { data = text ? JSON.parse(text) : {}; } catch { data = { message: text }; }
+        if (!response.ok) throw new Error(JSON.stringify(data));
+        return data;
+      }
+
+      function setStatus(id, message, tone = "") {
         const el = document.getElementById(id);
         el.className = tone ? `status-line ${tone}` : "status-line";
         el.textContent = message;
+      }
+
+      function setButtonBusy(button, busy, label) {
+        if (busy) {
+          button.dataset.originalText = button.textContent;
+          button.textContent = label;
+          button.disabled = true;
+          return;
+        }
+        button.textContent = button.dataset.originalText || button.textContent;
+        button.disabled = false;
+      }
+
+      function showToast(title, body) {
+        const toast = document.getElementById("toast");
+        toast.className = "toast open";
+        toast.innerHTML = `
+          <div class="about-line"><span class="about-pill green about-gap-after">${escapeHtml(title)}</span>${escapeHtml(body)}</div>
+        `;
+        window.setTimeout(() => {
+          toast.className = "toast";
+          toast.innerHTML = "";
+        }, 3200);
       }
 
       function parseCnMetric(value) {
         const text = String(value || "").replaceAll(",", "").replaceAll("，", "").trim();
         const match = text.match(/[\d.]+/);
         if (!match) return 0;
-
         let number = Number(match[0]);
         if (!Number.isFinite(number)) return 0;
         if (text.includes("亿")) number *= 100000000;
@@ -640,7 +533,6 @@
           favorite: parseCnMetric(book.favoriteCountText),
           recommendation: parseCnMetric(book.recommendationCountText),
         }));
-
         const maxWord = Math.max(...rows.map((item) => item.word), 1);
         const maxFavorite = Math.max(...rows.map((item) => item.favorite), 1);
         const maxRecommendation = Math.max(...rows.map((item) => item.recommendation), 1);
@@ -652,13 +544,8 @@
               (item.favorite / maxFavorite) * 4 +
               (item.recommendation / maxRecommendation) * 3 +
               (item.word / maxWord) * 2,
-            autoMetrics: item,
           }))
           .sort((a, b) => b.autoScore - a.autoScore);
-      }
-
-      function bestBook(items) {
-        return rankBooks(items)[0] || null;
       }
 
       function splitBookQueries(value) {
@@ -668,489 +555,292 @@
           .filter(Boolean);
       }
 
-      function setButtonBusy(button, busy, label) {
-        if (busy) {
-          button.dataset.originalText = button.textContent;
-          button.textContent = label;
-          button.disabled = true;
-          button.classList.add("is-busy");
-          return;
-        }
+      function progressHtml(progress) {
+        const target = Number(progress?.targetPages || 0);
+        const current = Math.min(Number(progress?.currentPage || 0), target || Number.MAX_SAFE_INTEGER);
+        const percent = target ? Math.max(0, Math.min(100, Math.round((current / target) * 100))) : 0;
+        const total = Number(progress?.sourceTotalPages || 0);
+        const entries = Number(progress?.crawledEntries || 0);
 
-        button.textContent = button.dataset.originalText || button.textContent;
-        button.disabled = false;
-        button.classList.remove("is-busy");
-      }
-
-      function showToast(title, body, seconds = 3, onDone) {
-        const toast = document.getElementById("toast");
-        const hasJump = typeof onDone === "function";
-        let remaining = seconds;
-        clearInterval(state.jumpTimer);
-
-        const render = () => {
-          toast.className = "toast open";
-          toast.innerHTML = `
-            <div class="about-line">
-              <span class="about-pill ${hasJump ? "green" : "blue"} about-gap-after">${escapeHtml(title)}</span>
-              <span class="about-path">${remaining}s 后${hasJump ? "跳转" : "关闭"}</span>
-            </div>
-            <div class="about-line">${escapeHtml(body)}</div>
-          `;
-        };
-
-        render();
-        state.jumpTimer = setInterval(() => {
-          remaining -= 1;
-          if (remaining <= 0) {
-            clearInterval(state.jumpTimer);
-            toast.className = "toast";
-            toast.innerHTML = "";
-            if (hasJump) onDone();
-            return;
-          }
-          render();
-        }, 1000);
-      }
-
-      async function requestJson(url, options) {
-        const response = await fetch(url, options);
-        const text = await response.text();
-        let data;
-        try { data = text ? JSON.parse(text) : {}; } catch { data = { message: text }; }
-        if (!response.ok) throw new Error(JSON.stringify(data));
-        return data;
-      }
-
-      function setStorageStatus(data) {
-        const driver = data.driver || (data.databaseConfigured ? "postgres" : "file");
-        state.storageDriver = driver;
-        const status = document.getElementById("service-status");
-
-        if (driver === "postgres") {
-          status.className = "status-line good";
-          status.innerHTML = `服务正常，<span class="about-pill green about-gap-after">PostgreSQL</span>已接通。`;
-          return;
-        }
-
-        const reason = data.databaseUnavailableReason
-          ? `数据库连接失败，已自动改用文件存储：<span class="about-path about-gap-before">${escapeHtml(data.databaseUnavailableReason)}</span>`
-          : "当前使用文件存储，小白部署不需要额外数据库。";
-        status.className = "status-line good";
-        status.innerHTML = `服务正常，<span class="about-pill green about-gap-after">无需数据库</span>${reason}`;
-      }
-
-      function renderSelectedBook(book) {
-        const box = document.getElementById("selected-book");
-        box.className = "selected-book ready";
-        box.innerHTML = `
-          <div class="about-line">
-            <span class="about-pill green about-gap-after">当前选中</span>
-            <span class="about-path about-gap-after">《${escapeHtml(book.title)}》</span>
-            <span class="about-pill dark about-gap-before about-gap-after">ID ${escapeHtml(book.bookId)}</span>
-            ${book.authorName ? `作者：${escapeHtml(book.authorName)}` : ""}
+        return `
+          <div class="progress-track">
+            <div class="progress-fill" style="width: ${percent}%"></div>
           </div>
-          <div class="about-line">
-            ${escapeHtml([book.category, book.subCategory, book.status].filter(Boolean).join(" / ") || "信息较少")}
+          <div class="progress-stats">
+            <span class="about-path">${target ? `${current} / ${target} 页` : "读取页数"}</span>
+            <span>${percent}%</span>
+            ${total && total !== target ? `<span>全量 ${escapeHtml(total)} 页</span>` : ""}
+            ${entries ? `<span>${escapeHtml(entries)} 条</span>` : ""}
           </div>
         `;
-      }
-
-      function applyBook(book, button, options = {}) {
-        state.selectedBook = book;
-        document.getElementById("job-book-id").value = String(book.bookId);
-        document.getElementById("job-create-btn").disabled = false;
-        renderSelectedBook(book);
-
-        document.querySelectorAll(".use-book-btn").forEach((item) => {
-          item.classList.remove("is-selected");
-          item.textContent = "用这本";
-        });
-
-        state.selectedButton = button;
-        if (button) {
-          button.classList.add("is-selected");
-          button.textContent = "已选中";
-        }
-
-        const progress = document.getElementById("task-progress");
-        progress.className = "progress-card good";
-        progress.innerHTML = `
-          <span class="about-pill green about-gap-after">已选择</span>
-          可以为《${escapeHtml(book.title)}》创建抓取任务。
-        `;
-        if (options.scroll !== false) {
-          document.getElementById("task-section").scrollIntoView({ behavior: "smooth", block: "nearest" });
-        }
-      }
-
-      function renderSearchCards(items) {
-        const root = document.getElementById("search-book-cards");
-        root.innerHTML = "";
-
-        if (!items.length) {
-          root.innerHTML = '<div class="empty-panel grid-wide">没有找到小说，换个书名或少输几个字再试。</div>';
-          return;
-        }
-
-        const fragment = document.createDocumentFragment();
-        for (const book of items) {
-          const card = document.createElement("article");
-          card.className = "book-tile";
-
-          const coverUrl = normalizeAssetUrl(book.coverUrl);
-          const cover = coverUrl
-            ? `<img class="book-cover" alt="${escapeHtml(book.title)}" src="${escapeHtml(coverUrl)}" loading="lazy" />`
-            : `<div class="book-cover-placeholder">${escapeHtml(book.title || "无封面")}</div>`;
-
-          const metaLines = [
-            book.authorName ? `作者：${book.authorName}${book.authorLevel ? `（${book.authorLevel}）` : ""}` : "",
-            [book.category, book.subCategory, book.status].filter(Boolean).join(" / "),
-            [
-              book.wordCountText ? `字数 ${book.wordCountText}` : "",
-              book.favoriteCountText ? `收藏 ${book.favoriteCountText}` : "",
-              book.recommendationCountText ? `推荐 ${book.recommendationCountText}` : "",
-            ].filter(Boolean).join(" | "),
-          ].filter(Boolean);
-          const isSelected = state.selectedBook?.bookId === book.bookId;
-
-          card.innerHTML = `
-            ${cover}
-            <div>
-              <div class="tile-title">${escapeHtml(book.title)}</div>
-              ${isSelected ? '<div class="about-line"><span class="about-pill green">自动选中</span></div>' : ""}
-              <div class="tile-meta">${metaLines.map(escapeHtml).join("<br>")}</div>
-            </div>
-            <div class="tile-actions">
-              <button class="btn use-book-btn${isSelected ? " is-selected" : ""}" type="button" data-book-id="${escapeHtml(book.bookId)}">${isSelected ? "已选中" : "用这本"}</button>
-              <button class="btn secondary" type="button" data-open-url="${escapeHtml(book.bookUrl)}">原页</button>
-            </div>
-          `;
-
-          const useButton = card.querySelector(".use-book-btn");
-          useButton.addEventListener("click", () => applyBook(book, useButton));
-          fragment.appendChild(card);
-        }
-
-        root.appendChild(fragment);
-        root.querySelectorAll("[data-open-url]").forEach((button) => {
-          button.addEventListener("click", () => window.open(button.dataset.openUrl, "_blank"));
-        });
       }
 
       function jobStatusView(job) {
         const map = {
-          queued: ["排队中", "blue"],
-          running: ["抓取中", "red"],
-          completed: ["已完成", "green"],
+          queued: ["排队", "blue"],
+          running: ["抓取", "red"],
+          completed: ["完成", "green"],
           failed: ["失败", "red"],
         };
         const [label, color] = map[job.status] || [job.status, "dark"];
         return { label, color };
       }
 
-      function toPositiveNumber(value) {
-        const number = Number(value);
-        return Number.isFinite(number) && number > 0 ? number : 0;
+      async function refreshHealth() {
+        const data = await requestJson("/health");
+        const driver = data.driver || (data.databaseConfigured ? "postgres" : "file");
+        const badge = document.getElementById("storage-badge");
+        badge.className = "about-pill green about-gap-before";
+        badge.textContent = driver === "postgres" ? "PostgreSQL" : "文件存储";
       }
 
-      function renderProgressBar(progressData) {
-        const targetPages = toPositiveNumber(progressData?.targetPages);
-        const sourceTotalPages = toPositiveNumber(progressData?.sourceTotalPages);
-        const currentPage = Math.min(toPositiveNumber(progressData?.currentPage), targetPages || Number.MAX_SAFE_INTEGER);
-        const crawledEntries = toPositiveNumber(progressData?.crawledEntries);
-        const totalBooklists = toPositiveNumber(progressData?.totalBooklists);
-        const percent = targetPages ? Math.max(0, Math.min(100, Math.round((currentPage / targetPages) * 100))) : 0;
-        const pageText = targetPages ? `${currentPage} / ${targetPages} 页` : "正在读取总页数";
-        const sourceText = sourceTotalPages && sourceTotalPages !== targetPages
-          ? `全量 ${sourceTotalPages} 页，本次 ${targetPages} 页`
-          : sourceTotalPages
-            ? `全量 ${sourceTotalPages} 页`
-            : "";
-        const entryText = crawledEntries
-          ? `已抓到 ${crawledEntries} 条评语`
-          : totalBooklists
-            ? `共约 ${totalBooklists} 条收录`
-            : "等待第一页结果";
-
-        return `
-          <div class="progress-track" aria-label="抓取进度">
-            <div class="progress-fill" style="width: ${percent}%"></div>
-          </div>
-          <div class="progress-stats">
-            <span class="about-path">${escapeHtml(pageText)}</span>
-            <span>${escapeHtml(percent)}%</span>
-            ${sourceText ? `<span>${escapeHtml(sourceText)}</span>` : ""}
-            <span>${escapeHtml(entryText)}</span>
-          </div>
-        `;
-      }
-
-      function jobCardId(jobId) {
-        return `job-progress-${jobId}`;
-      }
-
-      function ensureJobProgressRoot() {
-        const root = document.getElementById("job-progress-list");
-        const empty = root.querySelector(".empty-panel");
-        if (empty) empty.remove();
-        return root;
-      }
-
-      function renderJobProgressCard(job, book = {}) {
-        const root = ensureJobProgressRoot();
-        const { label, color } = jobStatusView(job);
-        const bookTitle = book.title || state.activeJobs.get(job.id)?.book?.title || `书籍 ID ${job.target_id}`;
-        let card = document.getElementById(jobCardId(job.id));
-
-        if (!card) {
-          card = document.createElement("article");
-          card.className = "booklist-tile";
-          card.id = jobCardId(job.id);
-          root.prepend(card);
-        }
-
-        card.innerHTML = `
-          <div class="booklist-head">
-            <span class="about-pill ${color}">${escapeHtml(label)}</span>
-            <span class="about-path">${escapeHtml(bookTitle)}</span>
-            <span class="about-pill dark">任务 #${escapeHtml(job.id)}</span>
-          </div>
-          <div>
-            ${renderProgressBar(job.payload?.progress)}
-            ${job.error_message ? `<div class="about-line">${escapeHtml(job.error_message)}</div>` : ""}
-          </div>
-          <div class="tile-actions">
-            <button class="btn secondary" type="button" data-load-book-id="${escapeHtml(job.target_id)}">调用本地书单</button>
-            <button class="btn secondary" type="button" data-check-book-id="${escapeHtml(job.target_id)}">检查更新</button>
-          </div>
-        `;
-
-        card.querySelectorAll("[data-load-book-id]").forEach((button) => {
-          button.addEventListener("click", async () => {
-            await loadBookDetails(button.dataset.loadBookId, 1, false);
-            document.getElementById("booklist-section").scrollIntoView({ behavior: "smooth", block: "start" });
-          });
-        });
-        card.querySelectorAll("[data-check-book-id]").forEach((button) => {
-          button.addEventListener("click", () => checkLocalBookUpdate(button.dataset.checkBookId));
-        });
-      }
-
-      function renderLocalLibrary(books) {
-        const root = document.getElementById("library-books");
-        root.innerHTML = "";
-
-        if (!books.length) {
-          root.innerHTML = '<div class="empty-panel grid-wide">还没有本地书单。先抓取一本书，完成后会自动出现在这里。</div>';
-          return;
-        }
-
-        for (const book of books) {
-          const card = document.createElement("article");
-          card.className = "library-tile";
-          card.innerHTML = `
-            <div class="booklist-head">
-              <span class="about-pill green">本地</span>
-              <span class="about-path">${escapeHtml(book.title || book.id)}</span>
-              <span class="about-pill blue">${escapeHtml(book.entryCount || 0)} 条</span>
-            </div>
-            <div class="tile-meta">
-              ID：${escapeHtml(book.id)}<br>
-              已抓页数：${escapeHtml(book.crawledPages || "?")} / ${escapeHtml(book.sourceTotalPages || "?")}<br>
-              上次抓取：${escapeHtml(formatTime(book.fetchedAt) || "未知")}
-            </div>
-            <div class="tile-actions">
-              <button class="btn blue" type="button" data-load-book-id="${escapeHtml(book.id)}">调用本地书单</button>
-              <button class="btn secondary" type="button" data-check-book-id="${escapeHtml(book.id)}">检查更新</button>
-              ${book.qidiantuUrl ? `<button class="btn secondary" type="button" data-open-url="${escapeHtml(book.qidiantuUrl)}">原页</button>` : ""}
-            </div>
-          `;
-          root.appendChild(card);
-        }
-
-        root.querySelectorAll("[data-load-book-id]").forEach((button) => {
-          button.addEventListener("click", async () => {
-            await loadBookDetails(button.dataset.loadBookId, 1, false);
-            document.getElementById("booklist-section").scrollIntoView({ behavior: "smooth", block: "start" });
-          });
-        });
-        root.querySelectorAll("[data-check-book-id]").forEach((button) => {
-          button.addEventListener("click", () => checkLocalBookUpdate(button.dataset.checkBookId));
-        });
-        root.querySelectorAll("[data-open-url]").forEach((button) => {
-          button.addEventListener("click", () => window.open(button.dataset.openUrl, "_blank"));
-        });
-      }
-
-      async function refreshLocalLibrary() {
+      async function refreshLibrary() {
         const data = await requestJson("/books");
-        state.libraryBooks = data.books || [];
-        setNotice("library-status", state.libraryBooks.length ? `本地已有 ${state.libraryBooks.length} 本小说缓存。` : "本地还没有书单缓存。", state.libraryBooks.length ? "good" : "");
-        renderLocalLibrary(state.libraryBooks);
+        state.books = data.books || [];
+        renderLibrary();
+        setStatus("top-status", `本地 ${state.books.length} 本书单。`, state.books.length ? "good" : "");
       }
 
-      async function checkLocalBookUpdate(bookId) {
-        setNotice("library-status", "正在检查远端是否有新增书单...");
-        const data = await requestJson(`/books/${bookId}/update-check`);
-        const book = data.local || {};
-        const status = document.getElementById("library-status");
-
-        if (!data.hasUpdate) {
-          setNotice("library-status", `《${book.title || book.id}》本地书单已是最新：${data.localCrawledPages}/${data.remote.totalPages} 页。`, "good");
-          return data;
-        }
-
-        const suggested = data.suggestedRefreshPages || "";
-        status.className = "status-line";
-        status.innerHTML = `
-          <span class="about-pill red about-gap-after">发现可补充</span>
-          ${escapeHtml(data.needsCompletion
-            ? `《${book.title || book.id}》本地还没抓全：${data.localCrawledPages}/${data.remote.totalPages} 页。建议补到 ${suggested} 页。`
-            : `《${book.title || book.id}》远端约新增 ${data.newBooklists} 条书单。建议补抓前 ${suggested} 页。`
-          )}
-          <button class="btn green about-gap-before" type="button" id="library-supplement-btn">补充更新</button>
-        `;
-        document.getElementById("library-supplement-btn").addEventListener("click", () => {
-          const sourceBook = { bookId: book.id, title: book.title };
-          void startCrawlForBook(sourceBook, suggested ? String(suggested) : "", { loadOnComplete: false }).catch((error) => {
-            setNotice("library-status", humanError(error), "bad");
-          });
-        });
-        return data;
+      function findBook(bookId) {
+        return state.books.find((book) => String(book.id) === String(bookId)) || null;
       }
 
-      function renderTaskProgress(job) {
-        const { label, color } = jobStatusView(job);
-        const progressData = job.payload?.progress;
-        const progress = document.getElementById("task-progress");
-        progress.className = `progress-card ${job.status === "completed" ? "good" : job.status === "failed" ? "bad" : ""}`;
-        progress.innerHTML = `
-          <div class="about-line">
-            <span class="about-pill ${color} about-gap-after">${escapeHtml(label)}</span>
-            <span class="about-path about-gap-after">任务 #${escapeHtml(job.id)}</span>
-            ${job.target_id ? `书籍 ID <span class="about-path about-gap-before about-gap-after">${escapeHtml(job.target_id)}</span>` : ""}
-            ${job.updated_at ? `更新时间：${escapeHtml(formatTime(job.updated_at))}` : ""}
-          </div>
-          ${progressData ? renderProgressBar(progressData) : renderProgressBar(null)}
-          ${job.error_message ? `<div class="about-line">${escapeHtml(job.error_message)}</div>` : ""}
-        `;
-      }
-
-      function renderBookDetails() {
-        const root = document.getElementById("book-details-result");
-        const { book, entries, page, pageSize, total } = state.details;
+      function renderLibrary() {
+        const root = document.getElementById("library-list");
         root.innerHTML = "";
 
-        if (!entries.length) {
-          root.innerHTML = '<div class="empty-panel grid-wide">这本书还没有抓到书单评语。</div>';
+        if (!state.books.length) {
+          root.innerHTML = '<div class="empty-panel">没有本地书单。</div>';
+          renderCompareSlots();
           return;
         }
 
-        const summary = document.createElement("div");
-        summary.className = "booklist-tile";
-        summary.innerHTML = `
-          <div class="booklist-head">
-            <span class="about-pill green">结果</span>
-            <span class="about-path">${escapeHtml(book?.title || book?.id || "未知书籍")}</span>
-            <span class="about-pill blue">${escapeHtml(total)} 条</span>
-            <span class="about-pill dark">已展示 ${escapeHtml(entries.length)} 条</span>
-          </div>
-          <div class="tile-meta">
-            任务完成后已自动加载。评语里的换行会拆成段落，不再把 \\n 当正文显示。
-          </div>
-          <div class="tile-actions">
-            ${book?.qidiantuUrl ? `<button class="btn secondary" type="button" data-open-url="${escapeHtml(book.qidiantuUrl)}">起点图原页</button>` : ""}
-          </div>
-        `;
-        root.appendChild(summary);
-
-        entries.forEach((entry, index) => {
-          const paragraphs = splitParagraphs(entry.commentText);
+        for (const book of state.books) {
           const card = document.createElement("article");
-          card.className = "booklist-tile";
+          card.className = "library-card";
+          card.draggable = true;
+          card.dataset.bookId = book.id;
           card.innerHTML = `
-            <div class="booklist-head">
+            <div class="card-head">
+              <span class="about-pill green">本地</span>
+              <span class="about-path">${escapeHtml(book.entryCount || 0)} 条</span>
+            </div>
+            <div class="card-title">${escapeHtml(book.title || book.id)}</div>
+            <div class="muted">
+              ID ${escapeHtml(book.id)}<br>
+              ${escapeHtml(book.crawledPages || "?")} / ${escapeHtml(book.sourceTotalPages || "?")} 页<br>
+              ${escapeHtml(formatTime(book.fetchedAt) || "未知时间")}
+            </div>
+            <div class="actions">
+              <button class="btn blue" type="button" data-add-id="${escapeHtml(book.id)}">加入</button>
+              <button class="btn secondary" type="button" data-view-id="${escapeHtml(book.id)}">查看</button>
+              <button class="btn secondary" type="button" data-check-id="${escapeHtml(book.id)}">更新</button>
+            </div>
+          `;
+          card.addEventListener("dragstart", (event) => {
+            event.dataTransfer.setData("text/plain", String(book.id));
+          });
+          root.appendChild(card);
+        }
+
+        root.querySelectorAll("[data-add-id]").forEach((button) => {
+          button.addEventListener("click", () => addBookToCompare(button.dataset.addId));
+        });
+        root.querySelectorAll("[data-view-id]").forEach((button) => {
+          button.addEventListener("click", () => loadLocalBook(button.dataset.viewId));
+        });
+        root.querySelectorAll("[data-check-id]").forEach((button) => {
+          button.addEventListener("click", () => checkUpdate(button.dataset.checkId));
+        });
+
+        renderCompareSlots();
+      }
+
+      function renderCompareSlots() {
+        state.compare.forEach((book, index) => {
+          const slot = document.getElementById(`slot-${index}`);
+          slot.className = `drop-slot${book ? " filled" : ""}`;
+          slot.innerHTML = book
+            ? `
+              <div class="card-head">
+                <span class="about-pill blue">#${index + 1}</span>
+                <span class="about-path">${escapeHtml(book.entryCount || 0)} 条</span>
+              </div>
+              <div class="card-title">${escapeHtml(book.title || book.id)}</div>
+              <div class="actions">
+                <button class="btn secondary" type="button" data-remove-slot="${index}">移出</button>
+                <button class="btn secondary" type="button" data-view-id="${escapeHtml(book.id)}">查看</button>
+              </div>
+            `
+            : `拖入第 ${index + 1} 本本地书单`;
+        });
+
+        document.querySelectorAll("[data-remove-slot]").forEach((button) => {
+          button.addEventListener("click", () => {
+            state.compare[Number(button.dataset.removeSlot)] = null;
+            renderCompareSlots();
+            renderEmptyOutput();
+          });
+        });
+        document.querySelectorAll(".drop-slot [data-view-id]").forEach((button) => {
+          button.addEventListener("click", () => loadLocalBook(button.dataset.viewId));
+        });
+
+        const ready = state.compare.filter(Boolean).length === 2;
+        document.getElementById("compare-btn").disabled = !ready;
+        if (ready) void runCompare();
+      }
+
+      function addBookToCompare(bookId) {
+        const book = findBook(bookId);
+        if (!book) return;
+        if (state.compare.some((item) => item && String(item.id) === String(book.id))) return;
+
+        const emptyIndex = state.compare.findIndex((item) => !item);
+        state.compare[emptyIndex === -1 ? 1 : emptyIndex] = book;
+        renderCompareSlots();
+      }
+
+      function setupDropSlots() {
+        document.querySelectorAll(".drop-slot").forEach((slot) => {
+          slot.addEventListener("dragover", (event) => {
+            event.preventDefault();
+            slot.classList.add("over");
+          });
+          slot.addEventListener("dragleave", () => slot.classList.remove("over"));
+          slot.addEventListener("drop", (event) => {
+            event.preventDefault();
+            slot.classList.remove("over");
+            const bookId = event.dataTransfer.getData("text/plain");
+            const book = findBook(bookId);
+            if (!book) return;
+
+            const index = Number(slot.dataset.slot);
+            const otherIndex = index === 0 ? 1 : 0;
+            if (state.compare[otherIndex] && String(state.compare[otherIndex].id) === String(book.id)) return;
+            state.compare[index] = book;
+            renderCompareSlots();
+          });
+        });
+      }
+
+      function renderEmptyOutput() {
+        setStatus("output-status", "把两本本地书单拖到左侧对比框。");
+        document.getElementById("output-list").innerHTML = '<div class="empty-panel">等待对比。</div>';
+      }
+
+      async function runCompare() {
+        const books = state.compare.filter(Boolean);
+        if (books.length !== 2) return;
+
+        setStatus("output-status", `正在对比《${books[0].title}》和《${books[1].title}》...`);
+        const data = await requestJson("/search/booklists/intersection", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ bookIds: books.map((book) => String(book.id)), limit: 100 }),
+        });
+        renderIntersection(data.results || [], books);
+      }
+
+      function renderIntersection(rows, books) {
+        const root = document.getElementById("output-list");
+        root.innerHTML = "";
+        setStatus("output-status", `《${books[0].title}》 与 《${books[1].title}》重合 ${rows.length} 个书单。`, rows.length ? "good" : "");
+
+        if (!rows.length) {
+          root.innerHTML = '<div class="empty-panel">没有重合书单。</div>';
+          return;
+        }
+
+        for (const [index, row] of rows.entries()) {
+          const card = document.createElement("article");
+          card.className = "result-card";
+          card.innerHTML = `
+            <div class="card-head">
               <span class="about-pill blue">#${index + 1}</span>
-              <span class="about-path">${escapeHtml(entry.booklistTitle || "未知书单")}</span>
-              ${entry.booklistFollowerCount !== null && entry.booklistFollowerCount !== undefined ? `<span class="about-pill green">${escapeHtml(entry.booklistFollowerCount)} 关注</span>` : ""}
-              ${entry.hearts !== null && entry.hearts !== undefined ? `<span class="about-pill red">心 ${escapeHtml(entry.hearts)}</span>` : ""}
-              ${entry.includedAt ? `<span class="about-pill dark">${escapeHtml(entry.includedAt)}</span>` : ""}
+              <span class="about-path">${escapeHtml(row.booklistTitle || "未知书单")}</span>
+              ${row.booklistFollowerCount !== null && row.booklistFollowerCount !== undefined ? `<span class="about-pill green">${escapeHtml(row.booklistFollowerCount)} 关注</span>` : ""}
+              ${row.booklistBookCount !== null && row.booklistBookCount !== undefined ? `<span class="about-pill dark">${escapeHtml(row.booklistBookCount)} 本书</span>` : ""}
             </div>
-            <div class="booklist-comment">
-              ${paragraphs.length ? paragraphs.map((line) => `<p>${escapeHtml(line)}</p>`).join("") : "<p>这条收录没有评语正文。</p>"}
-            </div>
-            <div class="tile-actions">
-              ${entry.booklistUrl ? `<button class="btn secondary" type="button" data-open-url="${escapeHtml(entry.booklistUrl)}">打开书单</button>` : ""}
+            <div class="actions">
+              ${row.booklistUrl ? `<button class="btn secondary" type="button" data-open-url="${escapeHtml(row.booklistUrl)}">打开书单</button>` : ""}
             </div>
           `;
           root.appendChild(card);
-        });
-
-        if (entries.length < total) {
-          const nextPage = page + 1;
-          const more = document.createElement("div");
-          more.className = "load-more-card";
-          more.innerHTML = `
-            <div>
-              已展示 ${escapeHtml(entries.length)} / ${escapeHtml(total)} 条，还有更多书单。
-            </div>
-            <button id="load-more-booklists" class="btn blue" type="button" data-next-page="${escapeHtml(nextPage)}">
-              加载下一页
-            </button>
-          `;
-          root.appendChild(more);
         }
 
         root.querySelectorAll("[data-open-url]").forEach((button) => {
           button.addEventListener("click", () => window.open(button.dataset.openUrl, "_blank"));
         });
-
-        const moreButton = document.getElementById("load-more-booklists");
-        if (moreButton) {
-          moreButton.addEventListener("click", async () => {
-            const nextPage = Number(moreButton.dataset.nextPage);
-            setButtonBusy(moreButton, true, "加载中...");
-            try {
-              await loadBookDetails(state.details.bookId, nextPage, true);
-            } catch (error) {
-              showToast("加载失败", humanError(error), 4);
-              setButtonBusy(moreButton, false);
-            }
-          });
-        }
       }
 
-      async function loadBookDetails(bookId, page = 1, append = false) {
+      async function loadLocalBook(bookId, page = 1, append = false) {
         const data = await requestJson(`/books/${bookId}?page=${page}`);
         const entries = data.entries || [];
         const pagination = data.pagination || {};
 
         if (!append || state.details.bookId !== bookId) {
           state.details = {
-            book: data.book || null,
             bookId,
+            book: data.book,
             entries: [],
             page: 0,
-            pageSize: pagination.pageSize || 20,
             total: pagination.total || entries.length,
           };
         }
-
-        state.details.book = data.book || state.details.book;
         state.details.entries.push(...entries);
         state.details.page = pagination.page || page;
-        state.details.pageSize = pagination.pageSize || state.details.pageSize;
         state.details.total = pagination.total || state.details.entries.length;
-        renderBookDetails();
+        renderLocalBookOutput();
+      }
+
+      function renderLocalBookOutput() {
+        const root = document.getElementById("output-list");
+        const { book, entries, page, total, bookId } = state.details;
+        root.innerHTML = "";
+        setStatus("output-status", `本地书单：${book?.title || bookId}，已显示 ${entries.length} / ${total} 条。`, "good");
+
+        for (const [index, entry] of entries.entries()) {
+          const paragraphs = splitParagraphs(entry.commentText);
+          const card = document.createElement("article");
+          card.className = "result-card";
+          card.innerHTML = `
+            <div class="card-head">
+              <span class="about-pill blue">#${index + 1}</span>
+              <span class="about-path">${escapeHtml(entry.booklistTitle || "未知书单")}</span>
+              ${entry.booklistFollowerCount !== null && entry.booklistFollowerCount !== undefined ? `<span class="about-pill green">${escapeHtml(entry.booklistFollowerCount)} 关注</span>` : ""}
+            </div>
+            <div>${paragraphs.length ? paragraphs.map((line) => `<p>${escapeHtml(line)}</p>`).join("") : '<span class="muted">无评语正文</span>'}</div>
+            <div class="actions">
+              ${entry.booklistUrl ? `<button class="btn secondary" type="button" data-open-url="${escapeHtml(entry.booklistUrl)}">打开书单</button>` : ""}
+            </div>
+          `;
+          root.appendChild(card);
+        }
+
+        if (entries.length < total) {
+          const more = document.createElement("article");
+          more.className = "result-card";
+          more.innerHTML = `<button id="load-more-local" class="btn blue" type="button">加载下一页</button>`;
+          root.appendChild(more);
+          document.getElementById("load-more-local").addEventListener("click", () => loadLocalBook(bookId, page + 1, true));
+        }
+
+        root.querySelectorAll("[data-open-url]").forEach((button) => {
+          button.addEventListener("click", () => window.open(button.dataset.openUrl, "_blank"));
+        });
+      }
+
+      async function searchBestBook(query) {
+        const data = await requestJson(`/search/books?q=${encodeURIComponent(query)}`);
+        const book = data.best || rankBooks(data.results || [])[0];
+        if (!book) throw new Error(`没有找到《${query}》`);
+        return book;
       }
 
       async function createCrawlJob(bookId, maxPagesRaw) {
-        const payload = { bookId };
-        if (String(maxPagesRaw || "").trim()) {
-          payload.maxPages = Number(maxPagesRaw);
-        }
-
+        const payload = { bookId: String(bookId) };
+        if (String(maxPagesRaw || "").trim()) payload.maxPages = Number(maxPagesRaw);
         return requestJson("/jobs/crawl-book", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1158,433 +848,138 @@
         });
       }
 
-      async function startCrawlForBook(book, maxPagesRaw, options = {}) {
-        const data = await createCrawlJob(String(book.bookId || book.id), maxPagesRaw);
-        return startJobPolling(data.jobId, String(book.bookId || book.id), {
-          book,
-          loadOnComplete: options.loadOnComplete ?? false,
-          primary: options.primary ?? false,
-          toastOnComplete: options.toastOnComplete ?? false,
-        });
-      }
+      function renderJobCard(job, book) {
+        const root = document.getElementById("job-list");
+        const empty = root.querySelector(".empty-panel");
+        if (empty) empty.remove();
 
-      async function getCachedBook(bookId) {
-        const response = await fetch(`/books/${bookId}?page=1`);
-        const text = await response.text();
-        let data;
-        try { data = text ? JSON.parse(text) : {}; } catch { data = { message: text }; }
-        if (response.status === 404) return null;
-        if (!response.ok) throw new Error(JSON.stringify(data));
-        return data;
-      }
-
-      function setCoStatus(html, tone = "") {
-        const box = document.getElementById("co-status");
-        box.className = tone ? `progress-card ${tone}` : "progress-card";
-        box.innerHTML = html;
-      }
-
-      function stopCoPolling() {
-        if (state.coPollingTimer) {
-          clearInterval(state.coPollingTimer);
-          state.coPollingTimer = null;
+        let card = document.getElementById(`job-${job.id}`);
+        if (!card) {
+          card = document.createElement("article");
+          card.id = `job-${job.id}`;
+          card.className = "job-card";
+          root.prepend(card);
         }
-      }
 
-      function waitForCrawlJob(jobId, book) {
-        stopCoPolling();
-
-        return new Promise((resolve, reject) => {
-          const poll = async () => {
-            try {
-              const job = await requestJson(`/jobs/${jobId}`);
-              const { label, color } = jobStatusView(job);
-              setCoStatus(`
-                <div class="about-line">
-                  <span class="about-pill ${color} about-gap-after">${escapeHtml(label)}</span>
-                  正在补抓《${escapeHtml(book.title)}》
-                  <span class="about-path about-gap-before">任务 #${escapeHtml(jobId)}</span>
-                </div>
-                ${renderProgressBar(job.payload?.progress)}
-              `, job.status === "failed" ? "bad" : "");
-
-              if (job.status === "completed") {
-                stopCoPolling();
-                resolve(job);
-              }
-
-              if (job.status === "failed") {
-                stopCoPolling();
-                reject(new Error(job.error_message || "补抓任务失败"));
-              }
-            } catch (error) {
-              stopCoPolling();
-              reject(error);
-            }
-          };
-
-          void poll();
-          state.coPollingTimer = setInterval(poll, 3000);
-        });
-      }
-
-      async function searchBestBookByTitle(query) {
-        const data = await requestJson(`/search/books?q=${encodeURIComponent(query)}`);
-        const book = bestBook(data.results || []);
-        if (!book) {
-          throw new Error(`没有找到《${query}》`);
-        }
-        return book;
-      }
-
-      async function ensureTargetBookCached(book, maxPagesRaw) {
-        const cached = await getCachedBook(book.bookId);
-        if (cached) return cached;
-
-        setCoStatus(`
-          <div class="about-line">
-            <span class="about-pill blue about-gap-after">未缓存</span>
-            《${escapeHtml(book.title)}》还没抓过，正在先补抓它的书单。
+        const { label, color } = jobStatusView(job);
+        card.innerHTML = `
+          <div class="card-head">
+            <span class="about-pill ${color}">${escapeHtml(label)}</span>
+            <span class="about-path">${escapeHtml(book.title || job.target_id)}</span>
+            <span class="about-pill dark">#${escapeHtml(job.id)}</span>
           </div>
-          ${renderProgressBar(null)}
-        `);
-        await startCrawlForBook(book, maxPagesRaw, { loadOnComplete: false, primary: false });
-        return getCachedBook(book.bookId);
-      }
-
-      function renderCoResults(rows, sourceBook, targetBooks) {
-        const root = document.getElementById("co-results");
-        root.innerHTML = "";
-
-        if (!rows.length) {
-          root.innerHTML = `
-            <div class="empty-panel grid-wide">
-              没有找到共同书单。若目标书只补抓了部分页，结果可能不完整；清空“补抓页数”抓全量后会更准。
-            </div>
-          `;
-          return;
-        }
-
-        const summary = document.createElement("div");
-        summary.className = "booklist-tile";
-        summary.innerHTML = `
-          <div class="booklist-head">
-            <span class="about-pill green">共现结果</span>
-            <span class="about-path">${escapeHtml(sourceBook.title || sourceBook.id)}</span>
-            ${targetBooks.map((book) => `<span class="about-path">${escapeHtml(book.title)}</span>`).join("")}
-            <span class="about-pill blue">${escapeHtml(rows.length)} 个书单</span>
+          ${progressHtml(job.payload?.progress)}
+          <div class="actions">
+            <button class="btn secondary" type="button" data-view-id="${escapeHtml(job.target_id)}">查看本地</button>
           </div>
-          <div class="tile-meta">这些结果来自本地已保存的抓取数据；A 和目标书都缓存后，再查不需要重新抓取。</div>
         `;
-        root.appendChild(summary);
-
-        rows.forEach((row, index) => {
-          const card = document.createElement("article");
-          card.className = "booklist-tile";
-          card.innerHTML = `
-            <div class="booklist-head">
-              <span class="about-pill blue">#${index + 1}</span>
-              <span class="about-path">${escapeHtml(row.booklistTitle || "未知书单")}</span>
-              ${row.booklistFollowerCount !== null && row.booklistFollowerCount !== undefined ? `<span class="about-pill green">${escapeHtml(row.booklistFollowerCount)} 关注</span>` : ""}
-              ${row.booklistBookCount !== null && row.booklistBookCount !== undefined ? `<span class="about-pill dark">${escapeHtml(row.booklistBookCount)} 本书</span>` : ""}
-            </div>
-            <div class="tile-meta">
-              命中 ${escapeHtml(row.matchedBooks || row.matchedBookIds?.length || "")} 本：${escapeHtml((row.matchedBookIds || []).join(" / "))}
-            </div>
-            <div class="tile-actions">
-              ${row.booklistUrl ? `<button class="btn secondary" type="button" data-open-url="${escapeHtml(row.booklistUrl)}">打开书单</button>` : ""}
-            </div>
-          `;
-          root.appendChild(card);
-        });
-
-        root.querySelectorAll("[data-open-url]").forEach((button) => {
-          button.addEventListener("click", () => window.open(button.dataset.openUrl, "_blank"));
-        });
-      }
-
-      async function runCoSearch() {
-        const sourceBookId = state.details.bookId || state.selectedBook?.bookId || document.getElementById("job-book-id").value.trim();
-        const queryText = document.getElementById("co-book-query").value;
-        const targetQueries = splitBookQueries(queryText);
-        const maxPagesRaw = document.getElementById("co-max-pages").value.trim();
-
-        document.getElementById("co-results").innerHTML = '<div class="empty-panel grid-wide">正在准备共现查询...</div>';
-
-        if (!sourceBookId) {
-          throw new Error("先搜索并选中 A 小说，再抓取 A 的书单。");
-        }
-
-        if (!targetQueries.length) {
-          throw new Error("请输入 B 小说名；多本可以用逗号或换行分隔。");
-        }
-
-        setCoStatus(`
-          <div class="about-line">
-            <span class="about-pill blue about-gap-after">检查 A</span>
-            正在确认基准书是否已经抓取。
-          </div>
-        `);
-        const sourceData = await getCachedBook(sourceBookId);
-        if (!sourceData) {
-          throw new Error("A 小说还没有缓存书单。请先抓取 A，完成后再查共现。");
-        }
-
-        const targetBooks = [];
-        for (const query of targetQueries) {
-          setCoStatus(`
-            <div class="about-line">
-              <span class="about-pill blue about-gap-after">搜索目标</span>
-              正在搜索《${escapeHtml(query)}》并自动选择综合最高的结果。
-            </div>
-          `);
-          const book = await searchBestBookByTitle(query);
-          if (String(book.bookId) !== String(sourceBookId) && !targetBooks.some((item) => item.bookId === book.bookId)) {
-            targetBooks.push(book);
-          }
-        }
-
-        if (!targetBooks.length) {
-          throw new Error("目标小说和 A 是同一本，无法做共现查询。");
-        }
-
-        await Promise.all(targetBooks.map((book) => ensureTargetBookCached(book, maxPagesRaw)));
-
-        const bookIds = [String(sourceBookId), ...targetBooks.map((book) => String(book.bookId))];
-        setCoStatus(`
-          <div class="about-line">
-            <span class="about-pill green about-gap-after">本地计算</span>
-            正在查 ${bookIds.length} 本书同时出现的书单。
-          </div>
-          ${maxPagesRaw ? `<div class="about-line">目标书按前 ${escapeHtml(maxPagesRaw)} 页补抓，结果可能不是全量。</div>` : ""}
-        `, "good");
-
-        const data = await requestJson("/search/booklists/intersection", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ bookIds, limit: 100 }),
-        });
-        renderCoResults(data.results || [], sourceData.book || { id: sourceBookId }, targetBooks);
-        setCoStatus(`
-          <div class="about-line">
-            <span class="about-pill green about-gap-after">完成</span>
-            找到 ${escapeHtml((data.results || []).length)} 个共同书单。A 和目标书都已缓存，后续可直接重复查询。
-          </div>
-        `, "good");
+        card.querySelector("[data-view-id]").addEventListener("click", () => loadLocalBook(job.target_id));
       }
 
       function stopJobPolling(jobId) {
-        if (jobId !== undefined) {
-          const timer = state.jobTimers.get(jobId);
-          if (timer) clearInterval(timer);
-          state.jobTimers.delete(jobId);
-          return;
-        }
-
-        if (state.pollingTimer) {
-          clearInterval(state.pollingTimer);
-          state.pollingTimer = null;
-        }
-        for (const timer of state.jobTimers.values()) {
-          clearInterval(timer);
-        }
-        state.jobTimers.clear();
+        const timer = state.jobTimers.get(jobId);
+        if (timer) clearInterval(timer);
+        state.jobTimers.delete(jobId);
       }
 
-      function startJobPolling(jobId, bookId, options = {}) {
+      function startJobPolling(jobId, book) {
         stopJobPolling(jobId);
-        const book = options.book || state.selectedBook || { bookId, title: `书籍 ID ${bookId}` };
-        state.activeJobs.set(jobId, { book, bookId });
 
-        return new Promise((resolve, reject) => {
-          const poll = async () => {
-            try {
-              const job = await requestJson(`/jobs/${jobId}`);
-              if (options.primary !== false) {
-                renderTaskProgress(job);
-              }
-              renderJobProgressCard(job, book);
+        const poll = async () => {
+          try {
+            const job = await requestJson(`/jobs/${jobId}`);
+            renderJobCard(job, book);
 
-              if (job.status === "completed") {
-                stopJobPolling(jobId);
-                await refreshLocalLibrary().catch(() => undefined);
-
-                if (options.loadOnComplete !== false) {
-                  document.getElementById("book-details-result").innerHTML = '<div class="empty-panel grid-wide">任务已完成，正在整理书单结果...</div>';
-                  await loadBookDetails(bookId, 1, false);
-                }
-
-                if (options.toastOnComplete !== false) {
-                  showToast("任务完成", `《${book.title || bookId}》书单结果已保存到本地书库。`, 3, () => {
-                    document.getElementById("library-section").scrollIntoView({ behavior: "smooth", block: "start" });
-                  });
-                }
-
-                resolve(job);
-                return;
-              }
-
-              if (job.status === "failed") {
-                stopJobPolling(jobId);
-                showToast("任务失败", job.error_message || "抓取任务没有完成。", 5);
-                reject(new Error(job.error_message || "抓取任务没有完成。"));
-              }
-            } catch (error) {
+            if (job.status === "completed") {
               stopJobPolling(jobId);
-              const progress = document.getElementById("task-progress");
-              progress.className = "progress-card bad";
-              progress.textContent = humanError(error);
-              reject(error);
+              await refreshLibrary().catch(() => undefined);
+              showToast("已保存", `《${book.title || job.target_id}》进入本地书单`);
             }
-          };
 
-          void poll();
-          state.jobTimers.set(jobId, setInterval(poll, 3000));
-        });
+            if (job.status === "failed") {
+              stopJobPolling(jobId);
+              showToast("抓取失败", job.error_message || "任务没有完成");
+            }
+          } catch (error) {
+            stopJobPolling(jobId);
+            showToast("任务异常", humanError(error));
+          }
+        };
+
+        void poll();
+        state.jobTimers.set(jobId, setInterval(poll, 3000));
       }
 
-      async function refreshHealth() {
-        const data = await requestJson("/health");
-        setStorageStatus(data);
-        return data;
+      async function searchAndCrawl(query, maxPagesRaw) {
+        const book = await searchBestBook(query);
+        const job = await createCrawlJob(book.bookId, maxPagesRaw);
+        startJobPolling(job.jobId, book);
+        return book;
       }
 
-      async function runBatchCrawl() {
-        const queries = splitBookQueries(document.getElementById("batch-book-queries").value);
-        const maxPagesRaw = document.getElementById("batch-max-pages").value.trim();
+      async function checkUpdate(bookId) {
+        const book = findBook(bookId);
+        if (!book) return;
+        setStatus("top-status", `检查《${book.title}》更新...`);
 
-        if (!queries.length) {
-          throw new Error("请输入至少一本小说名。");
-        }
-
-        setNotice("batch-status", `准备批量抓取 ${queries.length} 本小说...`);
-        const started = [];
-        for (const query of queries) {
-          setNotice("batch-status", `正在搜索《${query}》并自动选择正主...`);
-          const book = await searchBestBookByTitle(query);
-          const data = await createCrawlJob(book.bookId, maxPagesRaw);
-          started.push(book);
-          void startJobPolling(data.jobId, book.bookId, {
-            book,
-            loadOnComplete: false,
-            primary: false,
-            toastOnComplete: false,
-          }).catch(() => undefined);
-        }
-
-        setNotice("batch-status", `已创建 ${started.length} 个抓取任务，它们会分别显示进度。`, "good");
-      }
-
-      document.getElementById("search-book-btn").addEventListener("click", async () => {
-        const button = document.getElementById("search-book-btn");
-        const query = document.getElementById("search-book-query").value.trim();
-
-        if (query.length < 2) {
-          setNotice("search-book-result", "至少输入 2 个字再搜索。", "bad");
+        const data = await requestJson(`/books/${bookId}/update-check`);
+        if (!data.hasUpdate) {
+          setStatus("top-status", `《${book.title}》已是最新。`, "good");
           return;
         }
 
-        setButtonBusy(button, true, "搜索中...");
-        setNotice("search-book-result", "搜索中，稍等一下...");
-        document.getElementById("search-book-cards").innerHTML = '<div class="empty-panel grid-wide">正在搜索小说...</div>';
+        const pages = data.suggestedRefreshPages || "";
+        setStatus("top-status", `《${book.title}》可补充，建议抓到 ${pages || "全量"} 页。`, "");
+        const confirmed = window.confirm(`《${book.title}》有可补充书单，是否现在补抓？`);
+        if (!confirmed) return;
 
-        try {
-          const data = await requestJson(`/search/books?q=${encodeURIComponent(query)}`);
-          const results = rankBooks(data.results || []);
-          const autoBook = results[0] || null;
-          if (autoBook) {
-            applyBook(autoBook, null, { scroll: false });
-          }
-          setNotice(
-            "search-book-result",
-            autoBook
-              ? `找到 ${data.total} 本相关小说，已自动选中综合最高的《${autoBook.title}》。`
-              : `找到 ${data.total} 本相关小说。`,
-            results.length ? "good" : "",
-          );
-          renderSearchCards(results);
-        } catch (error) {
-          setNotice("search-book-result", humanError(error), "bad");
-          document.getElementById("search-book-cards").innerHTML = '<div class="empty-panel grid-wide">搜索失败，可以稍后重试。</div>';
-        } finally {
-          setButtonBusy(button, false);
-        }
-      });
+        const job = await createCrawlJob(bookId, pages ? String(pages) : "");
+        startJobPolling(job.jobId, { bookId, title: book.title });
+      }
 
-      document.getElementById("search-book-query").addEventListener("keydown", (event) => {
-        if (event.key === "Enter") {
-          document.getElementById("search-book-btn").click();
-        }
-      });
-
-      document.getElementById("job-create-btn").addEventListener("click", async () => {
-        const button = document.getElementById("job-create-btn");
-        const bookId = document.getElementById("job-book-id").value.trim();
-        const maxPagesRaw = document.getElementById("job-max-pages").value.trim();
-
-        if (!bookId) {
-          showToast("还没选书", "先搜索小说，然后点某张卡片里的“用这本”。", 4);
-          document.getElementById("search-book-query").focus();
+      document.getElementById("single-crawl-btn").addEventListener("click", async () => {
+        const button = document.getElementById("single-crawl-btn");
+        const query = document.getElementById("search-query").value.trim();
+        const maxPages = document.getElementById("single-max-pages").value.trim();
+        if (query.length < 2) {
+          setStatus("top-status", "至少输入 2 个字。", "bad");
           return;
         }
 
         setButtonBusy(button, true, "创建中...");
-        document.getElementById("task-progress").className = "progress-card";
-        document.getElementById("task-progress").innerHTML = `
-          <div class="about-line">
-            <span class="about-pill blue about-gap-after">已创建请求</span>正在提交抓取任务...
-          </div>
-          ${renderProgressBar(null)}
-        `;
-        document.getElementById("book-details-result").innerHTML = '<div class="empty-panel grid-wide">任务正在后台抓取，完成后会自动展示结果。</div>';
-
         try {
-          const data = await createCrawlJob(bookId, maxPagesRaw);
-          const book = state.selectedBook || { bookId, title: `书籍 ID ${bookId}` };
-          document.getElementById("task-progress").innerHTML = `
-            <div class="about-line">
-              <span class="about-pill red about-gap-after">抓取中</span>
-              <span class="about-path about-gap-after">任务 #${escapeHtml(data.jobId)}</span>
-              正在读取这本书一共有多少页书单。
-            </div>
-            ${renderProgressBar(null)}
-          `;
-          void startJobPolling(data.jobId, bookId, {
-            book,
-            loadOnComplete: true,
-            primary: true,
-            toastOnComplete: true,
-          }).catch(() => undefined);
-          setButtonBusy(button, false);
+          const book = await searchAndCrawl(query, maxPages);
+          setStatus("top-status", `已自动选择《${book.title}》并创建抓取任务。`, "good");
         } catch (error) {
-          setButtonBusy(button, false);
-          const progress = document.getElementById("task-progress");
-          progress.className = "progress-card bad";
-          progress.textContent = humanError(error);
-        }
-      });
-
-      document.getElementById("co-search-btn").addEventListener("click", async () => {
-        const button = document.getElementById("co-search-btn");
-        stopCoPolling();
-        setButtonBusy(button, true, "查询中...");
-        try {
-          await runCoSearch();
-        } catch (error) {
-          setCoStatus(`
-            <div class="about-line">
-              <span class="about-pill red about-gap-after">失败</span>${escapeHtml(humanError(error))}
-            </div>
-          `, "bad");
-          document.getElementById("co-results").innerHTML = '<div class="empty-panel grid-wide">共现查询没有完成。</div>';
+          setStatus("top-status", humanError(error), "bad");
         } finally {
           setButtonBusy(button, false);
         }
       });
 
-      document.getElementById("co-book-query").addEventListener("keydown", (event) => {
-        if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
-          document.getElementById("co-search-btn").click();
+      document.getElementById("search-query").addEventListener("keydown", (event) => {
+        if (event.key === "Enter") document.getElementById("single-crawl-btn").click();
+      });
+
+      document.getElementById("batch-crawl-btn").addEventListener("click", async () => {
+        const button = document.getElementById("batch-crawl-btn");
+        const queries = splitBookQueries(document.getElementById("batch-queries").value);
+        const maxPages = document.getElementById("batch-max-pages").value.trim();
+        if (!queries.length) {
+          setStatus("top-status", "批量名单为空。", "bad");
+          return;
+        }
+
+        setButtonBusy(button, true, "创建中...");
+        try {
+          for (const query of queries) {
+            await searchAndCrawl(query, maxPages);
+          }
+          setStatus("top-status", `已创建 ${queries.length} 个抓取任务。`, "good");
+        } catch (error) {
+          setStatus("top-status", humanError(error), "bad");
+        } finally {
+          setButtonBusy(button, false);
         }
       });
 
@@ -1592,34 +987,28 @@
         const button = document.getElementById("library-refresh-btn");
         setButtonBusy(button, true, "刷新中...");
         try {
-          await refreshLocalLibrary();
+          await refreshLibrary();
         } catch (error) {
-          setNotice("library-status", humanError(error), "bad");
+          setStatus("top-status", humanError(error), "bad");
         } finally {
           setButtonBusy(button, false);
         }
       });
 
-      document.getElementById("batch-crawl-btn").addEventListener("click", async () => {
-        const button = document.getElementById("batch-crawl-btn");
-        setButtonBusy(button, true, "创建中...");
-        try {
-          await runBatchCrawl();
-        } catch (error) {
-          setNotice("batch-status", humanError(error), "bad");
-        } finally {
-          setButtonBusy(button, false);
-        }
+      document.getElementById("clear-compare-btn").addEventListener("click", () => {
+        state.compare = [null, null];
+        renderCompareSlots();
+        renderEmptyOutput();
       });
 
-      refreshHealth().catch((error) => {
-        const status = document.getElementById("service-status");
-        status.className = "status-line bad";
-        status.textContent = humanError(error);
+      document.getElementById("compare-btn").addEventListener("click", () => {
+        void runCompare().catch((error) => setStatus("output-status", humanError(error), "bad"));
       });
-      refreshLocalLibrary().catch((error) => {
-        setNotice("library-status", humanError(error), "bad");
-      });
+
+      setupDropSlots();
+      renderCompareSlots();
+      refreshHealth().catch(() => undefined);
+      refreshLibrary().catch((error) => setStatus("top-status", humanError(error), "bad"));
     </script>
   </body>
 </html>
